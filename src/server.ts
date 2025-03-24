@@ -3,10 +3,7 @@ import userRoutes from "./modules/v1/user/user.route";
 import { userSchemas } from "./modules/v1/user/user.schema";
 import fjwt from "@fastify/jwt";
 
-export const server = Fastify({
-    logger: true,
-});
-
+export const server = Fastify({ logger: true });
 
 server.register(fjwt, { secret: "ini secret" });
 
@@ -25,11 +22,9 @@ server.decorate("authenticate", async function (request: FastifyRequest, reply: 
 // Middleware untuk otorisasi RBAC
 server.decorate("authorize", (roles: string[]) => {
     return async function (request: FastifyRequest, reply: FastifyReply) {
-        console.log('disnini')
         try {
             await request.jwtVerify();
             const userRole = request.user.publicMeta.role;
-            console.info(userRole)
 
             if (!roles.includes(userRole)) {
                 return reply.code(403).send({
@@ -47,22 +42,17 @@ server.decorate("authorize", (roles: string[]) => {
     };
 });
 
-// Pastikan dekorator sudah terdaftar sebelum rute di-load
-async function main() {
+// Register schema & routes
+async function setupServer() {
     for (const schema of userSchemas) {
         server.addSchema(schema);
     }
 
-    // Register routes setelah middleware
     server.register(userRoutes, { prefix: "/api/v1/user" });
 
-    try {
-        await server.listen({ port: 3000, host: "0.0.0.0" });
-        console.info("Server running on http://localhost:3000");
-    } catch (e) {
-        console.error(e);
-        process.exit(1);
-    }
+    await server.ready();
 }
 
-main();
+setupServer();
+
+export default server;
