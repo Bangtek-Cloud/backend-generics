@@ -42,12 +42,13 @@ server.decorate("authorize", (roles: string[]) => {
     };
 });
 
+
 // Register schema & routes
 async function setupServer() {
     for (const schema of userSchemas) {
         server.addSchema(schema);
     }
-
+    server.get("/health", async () => ({ status: "ok" }));
     server.register(userRoutes, { prefix: "/api/v1/user" });
 
     await server.ready();

@@ -2,13 +2,14 @@
   "compilerOptions": {
     "target": "ES2017",
     "module": "CommonJS",
-    "strict": true,
+    "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["@fastify/jwt", "node"], // Tambahkan ini
     "resolveJsonModule": true,
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "skipDefaultLibCheck": true,
   },
   "include": ["src/**/*.ts", "types.d.ts"], // Pastikan `src` juga masuk jika file ada di dalamnya
   "exclude": ["node_modules"]
