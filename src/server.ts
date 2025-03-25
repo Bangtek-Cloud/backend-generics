@@ -2,8 +2,13 @@ import Fastify, { FastifyReply, FastifyRequest } from "fastify";
 import userRoutes from "./modules/v1/user/user.route";
 import { userSchemas } from "./modules/v1/user/user.schema";
 import fjwt from "@fastify/jwt";
+import cors from '@fastify/cors'
 
 export const server = Fastify({ logger: true });
+
+server.register(cors, {
+    origin: '*' // works fine
+  })
 
 server.register(fjwt, { secret: "ini secret" });
 
