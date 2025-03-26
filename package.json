@@ -1,5 +1,6 @@
 {
   "name": "base-api",
+  "version": "1.0.1",
   "module": "index.ts",
   "devDependencies": {
     "@types/bun": "latest",
@@ -14,13 +15,16 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
+    "@fastify/env": "^5.0.2",
     "@fastify/jwt": "^9.1.0",
+    "@fastify/redis": "^7.0.2",
     "@prisma/client": "^6.5.0",
     "@types/fastify-jwt": "^0.8.3",
     "@vercel/node": "^5.1.14",
     "fastify": "^5.2.1",
     "fastify-jwt": "^4.2.0",
     "fastify-zod": "^1.4.0",
+    "ioredis": "^5.6.0",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.5"
   },

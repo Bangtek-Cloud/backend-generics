@@ -2,15 +2,70 @@ import Fastify, { FastifyReply, FastifyRequest } from "fastify";
 import userRoutes from "./modules/v1/user/user.route";
 import { userSchemas } from "./modules/v1/user/user.schema";
 import fjwt from "@fastify/jwt";
+import * as pack from '../package.json'
+import Redis from "ioredis";
+import fastifyRedis from "@fastify/redis";
+import fastifyEnv from '@fastify/env'
+import { JWTPayload } from "./types";
 
 export const server = Fastify({ logger: true });
 
-server.register(fjwt, { secret: "ini secret" });
+const schema = {
+    type: "object",
+    required: ["JWT_SECRET", "REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASS"],
+    properties: {
+        JWT_SECRET: { type: "string" },
+        REDIS_HOST: { type: "string" },
+        REDIS_PORT: { type: "number" },
+        REDIS_USER: { type: "string" },
+        REDIS_PASS: { type: "string" },
+    },
+};
+
+const options = {
+    confKey: 'config',
+    schema: schema,
+    data: process.env
+}
+
+server.register(fastifyEnv, options)
+
+console.log()
+const redis = new Redis({
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT),
+    username: process.env.REDIS_USER,
+    password: process.env.REDIS_PASS
+});
+
+
+server.register(fastifyRedis, {
+    client: redis,
+    closeClient: true
+});
+
+server.register(fjwt, { secret: process.env.JWT_SECRET });
 
 // Middleware untuk otentikasi
 server.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
     try {
-        await request.jwtVerify();
+        const header = request.headers.authorization;
+        if (!header || !header.startsWith("Bearer ")) {
+            return reply.code(401).send({
+                code: 401,
+                error: "Anda tidak memiliki izin untuk mengakses sumber daya ini. Silakan login terlebih dahulu.",
+            });
+        }
+        const decoded = await request.jwtVerify<JWTPayload>();
+        const token = header.split(" ")[1];
+        const redisAccessToken = await redis.get(`accessToken:${decoded.id}`);
+
+        if(redisAccessToken !== token){
+            return reply.code(401).send({
+                code: 401,
+                error: "Sesi tidak valid atau Anda telah login di perangkat lain. Silakan login kembali.",
+            });
+        }
     } catch (e) {
         return reply.code(401).send({
             code: 401,
@@ -48,7 +103,11 @@ async function setupServer() {
     for (const schema of userSchemas) {
         server.addSchema(schema);
     }
+    server.get('/', async () => ({
+        version: pack.version
+    }))
     server.get("/health", async () => ({ status: "ok" }));
+
     server.register(userRoutes, { prefix: "/api/v1/user" });
 
     await server.ready();

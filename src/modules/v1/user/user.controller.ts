@@ -1,8 +1,9 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { createUser, findUser, findUserByEmail } from "./user.service";
-import { CreateUserInput, LoginInput } from "./user.schema";
+import { createUser, findUser, findUserByEmail, updateUser } from "./user.service";
+import { CreateUserInput, LoginInput, RefreshInput, UpdateInput } from "./user.schema";
 import { verifyPassword } from "../../../utils/hash";
 import { server } from "../../../server";
+import { JWTPayload } from "src/types";
 
 export async function registerHandler(request: FastifyRequest<{ Body: CreateUserInput }>, reply: FastifyReply) {
     const body = request.body
@@ -10,15 +11,23 @@ export async function registerHandler(request: FastifyRequest<{ Body: CreateUser
         const findUser = await findUserByEmail(body.email)
         if (findUser) {
             return reply.code(400).send({ message: "Email sudah terdaftar, silahkan gunakan email lain" })
+        } else {
+            const user = await createUser(body)
+            const users = {
+                id: user.id,
+                email: user.email
+            }
+            const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
+            const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
+            return reply.send({ accessToken, refreshToken });
         }
-        const user = await createUser(body)
-        return reply.code(201).send(user)
     } catch (error) {
         console.error(error)
         return reply.code(400).send(error)
     }
 
 }
+
 export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>, reply: FastifyReply) {
     const body = request.body;
     try {
@@ -36,15 +45,16 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
         if (correctPassword) {
             const users = {
                 id: user.id,
-                email: user.email,
-                name: user.name,
-                avatar: user.avatar,
-                publicMeta: {
-                    role: user.role
-                }
+                email: user.email
             }
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
+
+            await server.redis.del(`accessToken:${user.id}`);
+            await server.redis.del(`refreshToken:${user.id}`);
+
+            await server.redis.setex(`accessToken:${user.id}`, 86400, accessToken);
+            await server.redis.setex(`refreshToken:${user.id}`, 604800, refreshToken);
 
             return reply.send({ accessToken, refreshToken });
         }
@@ -58,6 +68,52 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
 
 export async function meHandler(request: FastifyRequest, reply: FastifyReply) {
     const id = request.user.id;
-    const users = await findUser(id);
+    const [users] = await Promise.all([findUser(id)]);
     return users;
+}
+
+export async function updateHandler(request: FastifyRequest<{ Body: UpdateInput }>, reply: FastifyReply) {
+    try {
+        const id = request.user.id;
+        const body = request.body
+        await updateUser(id, body)
+        return reply.code(200).send({ message: 'Profil berhasil diperbarui' });
+    } catch (error) {
+        console.error(error);
+        return reply.code(500).send({ message: "Terjadi kesalahan server", error });
+    }
+}
+
+export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInput }>, reply: FastifyReply) {
+    try {
+        const refresh = request.body?.refreshToken
+        const decoded = await server.jwt.verify<JWTPayload>(refresh);
+        if (!decoded) {
+            return reply.status(500).send({ message: "Terjadi kesalahan code 11" })
+        }
+        const redisAccessToken = await server.redis.get(`refreshToken:${decoded.id}`);
+        if (refresh !== redisAccessToken) {
+            return reply.status(500).send({ message: "Sesi sudah berakhir, silahkan login ulang" })
+        }
+        const user = await findUser(decoded.id)
+        const users = {
+            id: user.id,
+            email: user.email
+        }
+        const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
+        const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
+
+        await server.redis.del(`accessToken:${user.id}`);
+        await server.redis.del(`refreshToken:${user.id}`);
+
+        await server.redis.setex(`accessToken:${user.id}`, 86400, accessToken);
+        await server.redis.setex(`refreshToken:${user.id}`, 604800, refreshToken);
+
+        return reply.send({ accessToken, refreshToken });
+
+
+    } catch (error) {
+        console.error(error)
+        return reply.status(500).send({ message: "Terjadi kesalahan" })
+    }
 }

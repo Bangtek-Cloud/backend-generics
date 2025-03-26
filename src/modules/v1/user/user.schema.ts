@@ -31,12 +31,15 @@ const loginSchema = z.object({
     }),
 })
 
-const createUserResponseSchema = z.object({
-    ...userCore,
-    id: z.string(),
-    avatar: z.string(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+const refreshSchema = z.object({
+    refreshToken: z.string({
+        required_error: 'Error code 10'
+    })
+})
+
+const updateSchema = z.object({
+    name: z.string().optional(),
+    avatar: z.string().optional()
 })
 
 const loginResponseSchema = z.object({
@@ -44,12 +47,23 @@ const loginResponseSchema = z.object({
     refreshToken: z.string(),
 })
 
+
+const userMeResponse = z.object({
+    ...userCore,
+    avatar: z.string(),
+    role: z.string()
+})
+
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type UpdateInput = z.infer<typeof updateSchema>;
+export type RefreshInput = z.infer<typeof refreshSchema>
 
 export const { schemas: userSchemas, $ref } = buildJsonSchemas({
     createUserSchema,
-    createUserResponseSchema,
     loginSchema,
-    loginResponseSchema
+    updateSchema,
+    refreshSchema,
+    loginResponseSchema,
+    userMeResponse
 });
