@@ -55,33 +55,45 @@ server.register(fastifyRedis, {
 
 server.register(fjwt, { secret: process.env.JWT_SECRET });
 
-// Middleware untuk otentikasi
 server.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
     try {
         const header = request.headers.authorization;
         if (!header || !header.startsWith("Bearer ")) {
             return reply.code(401).send({
                 code: 401,
-                error: "Anda tidak memiliki izin untuk mengakses sumber daya ini. Silakan login terlebih dahulu.",
+                error: "Token tidak ditemukan atau tidak valid. Silakan login kembali.",
             });
         }
-        const decoded = await request.jwtVerify<JWTPayload>();
-        const token = header.split(" ")[1];
-        const redisAccessToken = await redis.get(`accessToken:${decoded.id}`);
 
-        if(redisAccessToken !== token){
-            return reply.code(401).send({
-                code: 401,
+        const token = header.split(" ")[1];
+        const decoded = await request.jwtVerify<JWTPayload>();
+
+        const redisAccessToken = await redis.get(`loginAccess:${decoded.id}`);
+
+        if (!redisAccessToken) {
+            return reply.code(403).send({
+                code: 403,
+                error: "Akses ditolak. Token tidak ditemukan di server.",
+            });
+        }
+        const redisParse = JSON.parse(redisAccessToken);
+
+        if (redisParse.accessToken !== token) {
+            return reply.code(403).send({
+                code: 403,
                 error: "Sesi tidak valid atau Anda telah login di perangkat lain. Silakan login kembali.",
             });
         }
+
+        // Jika semua valid, lanjutkan ke route selanjutnya
     } catch (e) {
         return reply.code(401).send({
             code: 401,
-            error: "Anda tidak memiliki izin untuk mengakses sumber daya ini. Silakan login terlebih dahulu.",
+            error: "Token tidak valid atau telah kedaluwarsa. Silakan login kembali.",
         });
     }
 });
+
 
 // Middleware untuk otorisasi RBAC
 server.decorate("authorize", (roles: string[]) => {

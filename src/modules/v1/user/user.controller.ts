@@ -19,7 +19,14 @@ export async function registerHandler(request: FastifyRequest<{ Body: CreateUser
             }
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
-            return reply.send({ accessToken, refreshToken });
+
+            await server.redis.del(`loginAccess:${user.id}`);
+
+            const tokenizer = JSON.stringify({
+                accessToken,
+                refreshToken,
+            })
+            await server.redis.setex(`loginAccess:${user.id}`, 86400, tokenizer);
         }
     } catch (error) {
         console.error(error)
@@ -50,11 +57,13 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
 
-            await server.redis.del(`accessToken:${user.id}`);
-            await server.redis.del(`refreshToken:${user.id}`);
+            await server.redis.del(`loginAccess:${user.id}`);
 
-            await server.redis.setex(`accessToken:${user.id}`, 86400, accessToken);
-            await server.redis.setex(`refreshToken:${user.id}`, 604800, refreshToken);
+            const tokenizer = JSON.stringify({
+                accessToken,
+                refreshToken,
+            })
+            await server.redis.setex(`loginAccess:${user.id}`, 86400, tokenizer);
 
             return reply.send({ accessToken, refreshToken });
         }
@@ -91,9 +100,17 @@ export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInpu
         if (!decoded) {
             return reply.status(500).send({ message: "Terjadi kesalahan code 11" })
         }
-        const redisAccessToken = await server.redis.get(`refreshToken:${decoded.id}`);
-        if (refresh !== redisAccessToken) {
-            return reply.status(500).send({ message: "Sesi sudah berakhir, silahkan login ulang" })
+        const redisAccessToken = await server.redis.get(`loginAccess:${decoded.id}`);
+
+        if (!redisAccessToken) {
+            return reply.code(403).send({
+                code: 403,
+                error: "Akses ditolak. Token tidak ditemukan di server.",
+            });
+        }
+        const redisParse = JSON.parse(redisAccessToken);
+        if (refresh !== redisParse.refreshToken) {
+            return reply.status(403).send({ message: "Sesi sudah berakhir, silahkan login ulang" })
         }
         const user = await findUser(decoded.id)
         const users = {
@@ -103,11 +120,13 @@ export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInpu
         const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
         const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
 
-        await server.redis.del(`accessToken:${user.id}`);
-        await server.redis.del(`refreshToken:${user.id}`);
+        await server.redis.del(`loginAccess:${user.id}`);
 
-        await server.redis.setex(`accessToken:${user.id}`, 86400, accessToken);
-        await server.redis.setex(`refreshToken:${user.id}`, 604800, refreshToken);
+        const tokenizer = JSON.stringify({
+            accessToken,
+            refreshToken,
+        })
+        await server.redis.setex(`loginAccess:${user.id}`, 86400, tokenizer);
 
         return reply.send({ accessToken, refreshToken });
 
