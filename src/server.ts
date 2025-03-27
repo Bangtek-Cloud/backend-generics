@@ -7,8 +7,17 @@ import Redis from "ioredis";
 import fastifyRedis from "@fastify/redis";
 import fastifyEnv from '@fastify/env'
 import { JWTPayload } from "./types";
+import cors from '@fastify/cors'
 
 export const server = Fastify({ logger: true });
+
+server.register(cors, {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    preflightContinue: false,
+    credentials: true,
+});
 
 const schema = {
     type: "object",
