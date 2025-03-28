@@ -21,8 +21,9 @@ server.register(cors, {
 
 const schema = {
     type: "object",
-    required: ["JWT_SECRET", "REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASS"],
+    required: ["HELLO","JWT_SECRET", "REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASS"],
     properties: {
+        HELLO: { type: "string" },
         JWT_SECRET: { type: "string" },
         REDIS_HOST: { type: "string" },
         REDIS_PORT: { type: "number" },
@@ -125,6 +126,7 @@ async function setupServer() {
         server.addSchema(schema);
     }
     server.get('/', async () => ({
+        name: `${pack.name} API Service --- ${process.env.HELLO}`,
         version: pack.version
     }))
     server.get("/health", async () => ({ status: "ok" }));
