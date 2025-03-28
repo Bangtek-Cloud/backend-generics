@@ -27,6 +27,7 @@ export async function registerHandler(request: FastifyRequest<{ Body: CreateUser
                 refreshToken,
             })
             await server.redis.setex(`loginAccess:${user.id}`, 86400, tokenizer);
+            return reply.send({ accessToken, refreshToken });
         }
     } catch (error) {
         console.error(error)
