@@ -43,4 +43,5 @@ volumes:
   postgres_data:
 
 networks:
-  app-network:
+  apps-net:
+    external: true
