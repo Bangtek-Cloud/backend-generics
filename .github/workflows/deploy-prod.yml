@@ -36,7 +36,9 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
+            ls -la /home/${{ secrets.SSH_USER }}/fastify-app
             cd /home/${{ secrets.SSH_USER }}/fastify-app
+            docker compose -f /home/${{ secrets.SSH_USER }}/fastify-app/docker-compose.yml up -d
             docker compose down
             docker compose pull
             docker compose up -d
