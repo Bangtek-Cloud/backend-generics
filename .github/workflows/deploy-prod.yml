@@ -32,21 +32,21 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/fastify-app:latest
-    deploy:
-        runs-on: ubuntu-latest
-        name: Deploy Fastify App
-        needs: [docker_build]
-        steps:
-          - name: Deploy dengan Docker Compose di Server
-            uses: appleboy/ssh-action@v0.1.10
-            with:
-              host: ${{ secrets.SSH_HOST }}
-              username: ${{ secrets.SSH_USER }}
-              password: ${{ secrets.SSH_PASSWORD }}
-              script: |
-                docker pull ${{ secrets.SSH_USER }}/fastify-app:latest
-                cd /home/${{ secrets.SSH_USER }}/fastify-app
-                docker-compose up -d --build
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Fastify App
+    needs: [docker_build]
+    steps:
+      - name: Deploy dengan Docker Compose di Server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            docker pull ${{ secrets.SSH_USER }}/fastify-app:latest
+            cd /home/${{ secrets.SSH_USER }}/fastify-app
+            docker-compose up -d --build
 
     
 
