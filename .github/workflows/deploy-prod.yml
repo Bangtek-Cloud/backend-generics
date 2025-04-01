@@ -1,4 +1,4 @@
-name: Deploy Fastify App (Build and Pull)
+name: Deploy Fastify App
 
 on:
   push:
@@ -13,23 +13,31 @@ jobs:
       - name: Checkout kode
         uses: actions/checkout@v4
 
-      - name: Salin docker-compose.yml ke Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          source: docker-compose.yml
-          target: /home/${{ secrets.SSH_USER }}/fastify-app/
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Deploy dengan Docker Compose di Server (Build dan Pull)
+      - name: Login ke Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build dan Push Image Fastify
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/fastify-app:latest
+
+
+      - name: Deploy with Docker
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            cd /home/${{ secrets.SSH_USER }}/fastify-app
-            docker compose down
-            docker compose pull
-            docker compose up -d --build
+            docker pull ${{ secrets.DOCKER_USERNAME }}/fastify-app:latest
+            docker-compose down
+            docker-compose up -d --force-recreate
+            docker image prune -f
