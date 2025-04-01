@@ -1,4 +1,4 @@
-name: Deploy Fastify App
+name: Deploy Fastify App (Build and Pull)
 
 on:
   push:
@@ -13,22 +13,6 @@ jobs:
       - name: Checkout kode
         uses: actions/checkout@v4
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login ke Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build dan Push Image Fastify
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/fastify-app:latest
-
       - name: Salin docker-compose.yml ke Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -38,7 +22,7 @@ jobs:
           source: docker-compose.yml
           target: /home/${{ secrets.SSH_USER }}/fastify-app/
 
-      - name: Deploy dengan Docker Compose di Server
+      - name: Deploy dengan Docker Compose di Server (Build dan Pull)
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -48,4 +32,4 @@ jobs:
             cd /home/${{ secrets.SSH_USER }}/fastify-app
             docker compose down
             docker compose pull
-            docker compose up -d
+            docker compose up -d --build
