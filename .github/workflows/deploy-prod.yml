@@ -37,22 +37,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            MAX_RETRIES=3
-            COUNT=0
-            SUCCESS=0
-
-            while [ $COUNT -lt $MAX_RETRIES ]; do
-              docker-compose pull --quiet && \
-              docker-compose down --remove-orphans && \
-              docker-compose up -d --force-recreate --wait && \
-              docker image prune -f && SUCCESS=1 && break
-              
-              COUNT=$((COUNT+1))
-              echo "Retrying deployment... Attempt $COUNT"
-              sleep 5
-            done
-
-            if [ $SUCCESS -eq 0 ]; then
-              echo "Deployment failed after $MAX_RETRIES attempts."
-              exit 1
-            fi
+            docker pull ${{ secrets.DOCKER_USERNAME }}/fastify-app:latest
+            docker-compose down
+            docker-compose up -d --force-recreate
+            docker image prune -f
