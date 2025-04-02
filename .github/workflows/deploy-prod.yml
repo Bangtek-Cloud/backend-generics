@@ -38,6 +38,6 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/fastify-app:latest
-            docker-compose down
-            docker-compose up -d --force-recreate
-            docker image prune -f
+            cd fastify-app
+            docker compose down
+            docker compose up -d
