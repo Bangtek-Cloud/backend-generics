@@ -9,7 +9,8 @@
   },
   "scripts": {
     "start": "tsnd --respawn --transpile-only --exit-child src/main.ts",
-    "vercel-build": "bunx prisma generate && bunx prisma migrate deploy"
+    "vercel-build": "bunx prisma generate && bunx prisma migrate deploy",
+    "start:migrate:prod": "prisma migrate deploy && bun run start"
   },
   "peerDependencies": {
     "typescript": "^5.8.2"
@@ -26,6 +27,7 @@
     "fastify-jwt": "^4.2.0",
     "fastify-zod": "^1.4.0",
     "ioredis": "^5.6.0",
+    "prisma": "^6.5.0",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.5"
   },

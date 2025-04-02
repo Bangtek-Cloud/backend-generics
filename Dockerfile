@@ -14,4 +14,4 @@ EXPOSE 3000
 
 ENV ADDRESS=0.0.0.0 PORT=3000
 
-CMD ["bun", "start"]
+CMD ["bun", "start:migrate:prod"]
