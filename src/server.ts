@@ -8,6 +8,7 @@ import fastifyRedis from "@fastify/redis";
 import fastifyEnv from '@fastify/env'
 import { JWTPayload } from "./types";
 import cors from '@fastify/cors'
+import tournamentRoutes from "./modules/v1/tournaments/tournaments.route";
 
 export const server = Fastify({ logger: true });
 
@@ -21,9 +22,8 @@ server.register(cors, {
 
 const schema = {
     type: "object",
-    required: ["HELLO","JWT_SECRET", "REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASS"],
+    required: ["JWT_SECRET", "REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASS"],
     properties: {
-        HELLO: { type: "string" },
         JWT_SECRET: { type: "string" },
         REDIS_HOST: { type: "string" },
         REDIS_PORT: { type: "number" },
@@ -101,11 +101,12 @@ server.decorate("authorize", (roles: string[]) => {
     return async function (request: FastifyRequest, reply: FastifyReply) {
         try {
             await request.jwtVerify();
+            console.log("roles", request.user);
             const userRole = request.user.publicMeta.role;
 
             if (!roles.includes(userRole)) {
-                return reply.code(403).send({
-                    code: 403,
+                return reply.code(401).send({
+                    code: 401,
                     error: "Akses ditolak. Anda tidak memiliki izin untuk mengakses sumber daya ini.",
                 });
             }
@@ -122,16 +123,17 @@ server.decorate("authorize", (roles: string[]) => {
 
 // Register schema & routes
 async function setupServer() {
-    for (const schema of userSchemas) {
+    for (const schema of [...userSchemas]) {
         server.addSchema(schema);
     }
     server.get('/', async () => ({
-        name: `${pack.name} API Service --- ${process.env.HELLO}`,
+        name: `${pack.name} API Service`,
         version: pack.version
     }))
     server.get("/health", async () => ({ status: "ok" }));
 
     server.register(userRoutes, { prefix: "/api/v1/user" });
+    server.register(tournamentRoutes, { prefix: "/api/v1/tournaments" });
 
     await server.ready();
 }

@@ -15,7 +15,10 @@ export async function registerHandler(request: FastifyRequest<{ Body: CreateUser
             const user = await createUser(body)
             const users = {
                 id: user.id,
-                email: user.email
+                email: user.email,
+                publicMeta:{
+                    role: user.role
+                }
             }
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
@@ -53,7 +56,10 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
         if (correctPassword) {
             const users = {
                 id: user.id,
-                email: user.email
+                email: user.email,
+                publicMeta:{
+                    role: user.role
+                }
             }
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
@@ -116,7 +122,10 @@ export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInpu
         const user = await findUser(decoded.id)
         const users = {
             id: user.id,
-            email: user.email
+            email: user.email,
+            publicMeta:{
+                role: user.role
+            }
         }
         const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
         const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });

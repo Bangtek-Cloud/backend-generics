@@ -42,11 +42,14 @@ model Tournaments {
   description     String
   prize          Json
   startDate      DateTime
-  endDate        DateTime?  
+  endDate        DateTime?
   status         TournamentStatus @default(UPCOMING)  
-  maxParticipants Int?     
+  maxParticipants Int?
+  usingLogoPrice  Int?
+  price          Json
   location       String?    
-  rules          Json?     
+  rules          Json?
+  disabled        Boolean @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -58,6 +61,9 @@ model Contestant {
   playerType     PlayerType @default(INDIVIDUAL)
   equipmentSource Boolean @default(true)
   isVerified     Boolean @default(false)
+  usingLogo       Boolean @default(false)
+  logo            String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -72,6 +78,7 @@ enum Role {
   STAKEHOLDER
   DONOR
   ADMIN
+  SU
 }
 
 enum PlayerType {
