@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { registerHandler, loginHandler, meHandler } from "./user.controller";
+import { registerHandler, loginHandler, meHandler, updateHandler, refreshHandler } from "./user.controller";
 import { $ref } from "./user.schema";
 
 async function userRoutes(server: FastifyInstance) {
@@ -7,10 +7,11 @@ async function userRoutes(server: FastifyInstance) {
         schema: {
             body: $ref("createUserSchema"),
             response: {
-                201: $ref("createUserResponseSchema"),
+                201: $ref("loginResponseSchema"),
             },
         }
     }, registerHandler);
+
     server.post("/login", {
         schema: {
             body: $ref("loginSchema"),
@@ -18,8 +19,29 @@ async function userRoutes(server: FastifyInstance) {
                 200: $ref("loginResponseSchema"),
             },
         }
-    },loginHandler);
-    server.get("/me", { preHandler: [server.authenticate] }, meHandler);
+    }, loginHandler);
+
+    server.get("/me", {
+        schema: {
+            response: {
+                200: $ref('userMeResponse')
+            }
+        },
+        preHandler: [server.authenticate]
+    }, meHandler);
+
+    server.post('/refresh', {
+        schema: {
+            body: $ref('refreshSchema')
+        }
+    }, refreshHandler)
+
+    server.put('/updateMe', {
+        schema: {
+            body: $ref('updateSchema')
+        },
+        preHandler: [server.authenticate]
+    }, updateHandler)
 
     //! Route dengan RBAC untuk admin
     //! server.get(

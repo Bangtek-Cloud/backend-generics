@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - apps-net
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - apps-net
+
+  fastify:
+    build: kevinkrisma/fastify-app:latest
+    ports:
+      - "3000:3000"
+    environment:
+      JWT_SECRET: 4021c341077e695f075ce1d505668d1f96f94cc1fd260e7142cc9fd0e51c80699f6210f125b4ca71553c15ee78590018be59054d19b356d6c7845c8827b1a3c6
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_USER: ""
+      DATABASE_URL: "postgresql://user:password@postgres:5432/mydb"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - apps-net
+
+volumes:
+  postgres_data:
+
+networks:
+  apps-net:
+    external: true
