@@ -62,7 +62,8 @@ model Contestant {
   equipmentSource Boolean @default(true)
   isVerified     Boolean @default(false)
   usingLogo       Boolean @default(false)
-  logo            String?
+  logo            Bytes?
+  price          Int
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -70,7 +71,8 @@ model Contestant {
   user   User   @relation(fields: [userId], references: [id])
   userId String 
 
-  tournaments Tournaments[] @relation("TournamentContestants")
+  tournamentId String
+  tournament   Tournaments @relation(fields: [tournamentId], references: [id], name: "TournamentContestants")
 }
 
 enum Role {
