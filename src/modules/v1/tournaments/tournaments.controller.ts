@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { createTournament, deleteTournament, getAllTournaments, getTournamentById, updateTournament } from "./tournaments.service";
+import { createTournament, deleteTournament, getAllPendingTournaments, getAllTournamentByUserId, getAllTournaments, getTournamentById, updateTournament } from "./tournaments.service";
 
 export async function addNewTournamentHandler(request: FastifyRequest, reply: FastifyReply) {
     const {
@@ -14,6 +14,7 @@ export async function addNewTournamentHandler(request: FastifyRequest, reply: Fa
         rules,
         usingLogoPrice,
         price,
+        eventId,
         disabled
     } = request.body as any;
     try {
@@ -29,7 +30,14 @@ export async function addNewTournamentHandler(request: FastifyRequest, reply: Fa
             rules,
             usingLogoPrice,
             price,
+            eventId,
             disabled
+        }
+        if(!eventId){
+            return reply.status(400).send({
+                code: 400,
+                message: "Masukan eventId",
+            })
         }
         const savedTournament = await createTournament(tournament);
         if (!savedTournament) {
@@ -162,6 +170,70 @@ export async function deleteTournamentHandler(request: FastifyRequest, reply: Fa
         return reply.status(500).send({
             code: 500,
             message: "Internal server error",
+        })
+    }
+}
+
+export async function getAllPendingTournamentsHandler(request: FastifyRequest, reply: FastifyReply) {
+    try {
+        const userId = request.user.id
+        const tournaments = await getAllPendingTournaments(userId);
+
+        return reply.status(200).send({
+            code: 200,
+            data: tournaments,
+        })
+    } catch (error) {
+        console.log(error);
+        return reply.status(500).send({
+            code: 500,
+            message: "Internal server error",
+        })
+    }
+}
+
+export async function validatePriceHandler(id: any, price: any, option: any, usingLogo: any) {
+    const tournament = await getTournamentById(id);
+    if (!tournament) {
+        return false
+    }
+    const prices = Array.isArray(tournament.price) ? tournament.price : [];
+    const selectedPrice: any = prices.find((p: any) => p.key === Number(option));
+    // const sum = (selectedPrice?.amount || 0) + tournament.usingLogoPrice;
+    if (!selectedPrice || !selectedPrice.amount) {
+        console.log('error disini')
+        return false
+    }
+    if (usingLogo) {
+        const sum = selectedPrice.amount + tournament.usingLogoPrice;
+        console.info('SUM1', sum)
+        if (sum !== Number(price)) {
+            return false
+        }
+    } else {
+        const sum = selectedPrice.amount
+        console.info('SUM2', sum)
+        if (sum !== Number(price)) {
+            return false
+        }
+    }
+    return true
+}
+
+export async function getAllTournamentByUserIdHandler(request: FastifyRequest, reply: FastifyReply) {
+    try {
+        const userId = request.user.id
+        const tournaments = await getAllTournamentByUserId(userId);
+        return reply.status(200).send({
+            code: 200,
+            data: tournaments,
+        })
+    }
+    catch (error) {
+        console.log(error);
+        return reply.status(500).send({
+            code: 500,
+            error: "Internal server error",
         })
     }
 }

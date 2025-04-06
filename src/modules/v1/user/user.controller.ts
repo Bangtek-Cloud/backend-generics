@@ -110,14 +110,14 @@ export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInpu
         const redisAccessToken = await server.redis.get(`loginAccess:${decoded.id}`);
 
         if (!redisAccessToken) {
-            return reply.code(403).send({
-                code: 403,
+            return reply.code(440).send({
+                code: 440,
                 error: "Akses ditolak. Token tidak ditemukan di server.",
             });
         }
         const redisParse = JSON.parse(redisAccessToken);
         if (refresh !== redisParse.refreshToken) {
-            return reply.status(403).send({ message: "Sesi sudah berakhir, silahkan login ulang" })
+            return reply.status(440).send({ message: "Sesi sudah berakhir, silahkan login ulang" })
         }
         const user = await findUser(decoded.id)
         const users = {

@@ -1,12 +1,6 @@
 import { FastifyInstance } from "fastify";
-import { addNewTournamentHandler, deleteTournamentHandler, getAllTournamentsHandler, getTournamentByIdHandler, updateTournamentHandler } from "./tournaments.controller";
+import { addNewTournamentHandler, deleteTournamentHandler, getAllPendingTournamentsHandler, getAllTournamentByUserIdHandler, getAllTournamentsHandler, getTournamentByIdHandler, updateTournamentHandler, validatePriceHandler } from "./tournaments.controller";
 
-// Extend FastifyInstance to include the authorize method
-declare module "fastify" {
-    interface FastifyInstance {
-        authorize: (roles: string[]) => (request: any, reply: any) => Promise<void>;
-    }
-}
 
 async function tournamentRoutes(server: FastifyInstance) {
     server.post(
@@ -34,6 +28,21 @@ async function tournamentRoutes(server: FastifyInstance) {
         { preHandler: [server.authenticate, server.authorize(["SU"])] },
         deleteTournamentHandler
     );
+
+    server.get('/pending', {
+        preHandler: [server.authenticate],
+    },
+        getAllPendingTournamentsHandler);
+
+    server.get('/all', {
+        preHandler: [server.authenticate],
+    },
+        getAllTournamentByUserIdHandler);
+
+    // server.get('/user/:id', {
+    //     preHandler: [server.authenticate],
+    //     getAllParticipansHandler
+    // })
 }
 
 export default tournamentRoutes;
