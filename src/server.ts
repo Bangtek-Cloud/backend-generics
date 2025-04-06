@@ -86,16 +86,16 @@ server.decorate("authenticate", async function (request: FastifyRequest, reply: 
         const redisAccessToken = await redis.get(`loginAccess:${decoded.id}`);
 
         if (!redisAccessToken) {
-            return reply.code(401).send({
-                code: 401,
+            return reply.code(440).send({
+                code: 440,
                 error: "Akses ditolak. Token tidak ditemukan di server.",
             });
         }
         const redisParse = JSON.parse(redisAccessToken);
 
         if (redisParse.accessToken !== token) {
-            return reply.code(401).send({
-                code: 401,
+            return reply.code(440).send({
+                code: 440,
                 error: "Sesi tidak valid atau Anda telah login di perangkat lain. Silakan login kembali.",
             });
         }
