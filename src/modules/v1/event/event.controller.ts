@@ -32,7 +32,7 @@ export async function createEventHandler(request: FastifyRequest, reply: Fastify
             endDate: new Date(endDate),
             logo: logoBuffer,
             location,
-            isActive,
+            isActive: isActive === 'true' ? true : false,
             rules,
         });
         return reply.status(201).send({ success: true, message: "Event berhasil disimpan" });
@@ -98,7 +98,7 @@ export async function getEventByIdHandler(request: FastifyRequest, reply: Fastif
 export async function getAllEventsHandler(request: FastifyRequest, reply: FastifyReply) {
     try {
         const events = await EventService.getAllEvents();
-        return reply.status(200).send({ success: true, error:false, data: events });
+        return reply.status(200).send({ success: true, error: false, data: events });
     } catch (error) {
         console.error("Error fetching all events:", error);
         return reply.status(500).send({ success: false, error: 'Terjadi kesalahan dalam mengambil semua events' });
