@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { ContestantService } from "./contestant.service";
 import { validatePriceHandler } from "../tournaments/tournaments.controller";
+import { createMinioClient } from "../../../utils/minio";
 
 export async function getAllContestants(request: FastifyRequest, reply: FastifyReply) {
     try {
@@ -25,6 +26,8 @@ export async function getContestant(request: FastifyRequest, reply: FastifyReply
 }
 
 export async function createContestant(request: FastifyRequest, reply: FastifyReply) {
+    const minioClient = createMinioClient(request.server);
+    const bucketName = "contestant";
     try {
         const { tournament } = request.params as { tournament: string };
         const userId = request.user.id
@@ -39,6 +42,7 @@ export async function createContestant(request: FastifyRequest, reply: FastifyRe
         }
         const parts = request.parts();
         let logoBuffer: Buffer | undefined;
+        let logoFileName = "";
 
         const contestantData: any = {};
 
@@ -49,12 +53,28 @@ export async function createContestant(request: FastifyRequest, reply: FastifyRe
                     chunks.push(chunk);
                 }
                 logoBuffer = Buffer.concat(chunks);
+                logoFileName = `contestant-logo-${crypto.randomUUID()}.png`;
             } else {
                 contestantData[part.fieldname] = part.value;
             }
         }
 
-        const { playerType, equipmentSource, equipmentOwned, isVerified, shirtSize, usingLogo, price, optionPrice, storeName, storeAddress } = contestantData;
+        let logoUrl = "";
+        if (logoBuffer && logoFileName) {
+          // Buat bucket jika belum ada
+          const exists = await minioClient.bucketExists(bucketName);
+          if (!exists) {
+            await minioClient.makeBucket(bucketName, 'us-east-1');
+          }
+    
+          // Upload logo ke MinIO
+          await minioClient.putObject(bucketName, logoFileName, logoBuffer, logoBuffer.length);
+    
+          // URL akses (bisa disesuaikan)
+          logoUrl = `${bucketName}/${logoFileName}`;
+        }
+
+        const { playerType, phoneNo, equipmentSource, equipmentOwned, isVerified, shirtSize, usingLogo, price, optionPrice, storeName, storeAddress } = contestantData;
         if (!optionPrice) {
             return reply.status(400).send({
                 success: false,
@@ -80,11 +100,12 @@ export async function createContestant(request: FastifyRequest, reply: FastifyRe
             isVerified,
             usingLogo: usingLogo === "true",
             optionPrice: parseInt(optionPrice),
-            logo: logoBuffer,
+            logoUrl,
             price: parseInt(price),
             storeName,
             storeAddress,
             shirtSize,
+            phoneNo,
             equipmentOwned
         });
 

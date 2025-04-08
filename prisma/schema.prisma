@@ -38,17 +38,18 @@ model Product {
 }
 
 model Event {
-  id          String           @id @default(cuid())
-  name        String
-  description String
-  rules       Json
-  startDate   DateTime
-  endDate     DateTime?
-  logo        Bytes?
-  location    String?
-  isActive    Boolean          @default(true)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id            String           @id @default(cuid())
+  name          String
+  description   String
+  rules         Json
+  startDate     DateTime
+  endDate       DateTime?
+  logo          Bytes?
+  eventLogoUrl  String?
+  location      String?
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   tournaments Tournaments[]
 }
@@ -84,7 +85,9 @@ model Contestant {
   equipmentOwned  Json?
   isVerified      Boolean    @default(false)
   usingLogo       Boolean    @default(false)
+  phoneNo         String?
   logo            Bytes?
+  logoUrl         String?
   optionPrice     Int        @default(0)
   contestantType  ConsType   @default(PLAYER)
   price           Int

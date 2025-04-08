@@ -37,9 +37,6 @@ async function userRoutes(server: FastifyInstance) {
     }, refreshHandler)
 
     server.put('/updateMe', {
-        schema: {
-            body: $ref('updateSchema')
-        },
         preHandler: [server.authenticate]
     }, updateHandler)
 

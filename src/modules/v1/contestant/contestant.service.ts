@@ -10,12 +10,13 @@ export class ContestantService {
         isVerified?: boolean;
         optionPrice?: number;
         usingLogo?: boolean;
-        logo?: Buffer;
+        logoUrl?:string;
         price: number;
         storeName?: string;
         storeAddress?: string;
         equipmentOwned?: string;
         shirtSize?: string;
+        phoneNo?:string;
     }): Promise<Contestant> {
         try {
             const newContestant = await prisma.contestant.create({
@@ -27,12 +28,13 @@ export class ContestantService {
                     isVerified: data.isVerified || false,
                     usingLogo: data.usingLogo || false,
                     optionPrice: data.optionPrice || undefined,
-                    logo: data.logo || undefined,
+                    logoUrl: data.logoUrl || "",
                     price: data.price,
                     storeName: data.storeName || undefined,
                     storeAddress: data.storeAddress || undefined,
                     equipmentOwned: data.equipmentOwned || [""],
-                    shirtSize: data.shirtSize || ""
+                    shirtSize: data.shirtSize || "",
+                    phoneNo: data.phoneNo
                 },
             });
             return newContestant;
@@ -72,7 +74,7 @@ export class ContestantService {
                     equipmentSource: true,
                     isVerified: true,
                     usingLogo: true,
-                    logo: true,
+                    logoUrl: true,
                     price: true,
                     storeName: true,
                     equipmentOwned: true,
@@ -80,6 +82,8 @@ export class ContestantService {
                     storeAddress: true,
                     tournament: true,
                     optionPrice: true,
+                    phoneNo: true,
+                    contestantType: true,
                     createdAt: true,
                     updatedAt: true,
                 },
@@ -89,9 +93,9 @@ export class ContestantService {
     
             return {
                 ...contestant,
-                logo: contestant.logo
-                    ? `data:image/png;base64,${Buffer.from(contestant.logo as Buffer).toString("base64")}`
-                    : null,
+                phoneNo: contestant.phoneNo || "",
+                contestantType: contestant.contestantType || "PLAYER",
+                logo: null, // Add a default value for the logo property
             };
         } catch (error) {
             if (error instanceof Error) {
