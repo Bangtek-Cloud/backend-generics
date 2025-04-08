@@ -36,7 +36,7 @@ export async function findUser(id: string) {
     });
 }
 
-export async function updateUser(id: string, data:UpdateInput) {
+export async function updateUser(id: string, data:any) {
     return prisma.user.update({
         where: {
             id

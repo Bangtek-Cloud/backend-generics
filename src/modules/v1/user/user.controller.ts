@@ -97,8 +97,8 @@ export async function updateHandler(request: FastifyRequest, reply: FastifyReply
       const parts = request.parts();
   
       let avatarBuffer: Buffer | undefined;
-      let avatarUrl: string | undefined = undefined;
-      let fullName = "";
+      let avatarUrl: string | undefined;
+      let fullName: string | undefined;
   
       for await (const part of parts) {
         if (part.type === "file") {
@@ -119,24 +119,31 @@ export async function updateHandler(request: FastifyRequest, reply: FastifyReply
           await minioClient.putObject(bucketName, fileName, avatarBuffer, avatarBuffer.length);
           avatarUrl = `${bucketName}/${fileName}`;
         } else if (part.fieldname === "fullName") {
-          fullName = part.value as string;
+          fullName = part.value?.toString().trim();
         }
       }
   
-      // Ambil data user sebelumnya untuk mempertahankan avatar jika tidak diubah
       const user = await findUser(id);
   
-      await updateUser(id, {
-        name: fullName,
-        avatar: avatarUrl ?? user.avatar, // pakai yang baru kalau ada, kalau tidak tetap pakai yang lama
-      });
+      const updatePayload: Record<string, any> = {
+        name: fullName ?? user.name,
+        avatar: avatarUrl ?? user.avatar,
+      };
+  
+      // Jika upload avatar, set usingAvatar jadi true
+      if (avatarUrl) {
+        updatePayload.usingAvatar = true;
+      }
+  
+      await updateUser(id, updatePayload);
   
       return reply.code(200).send({ message: "Profil berhasil diperbarui" });
     } catch (error) {
       console.error("Gagal update profil:", error);
       return reply.code(500).send({ message: "Terjadi kesalahan server", error: error.message });
     }
-  }  
+  }
+  
   
 
 export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInput }>, reply: FastifyReply) {
