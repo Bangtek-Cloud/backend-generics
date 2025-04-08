@@ -52,7 +52,8 @@ const userMeResponse = z.object({
     ...userCore,
     id: z.string(),
     avatar: z.string(),
-    role: z.string()
+    role: z.string(),
+    usingAvatar: z.boolean()
 })
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;

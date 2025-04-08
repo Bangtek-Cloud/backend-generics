@@ -60,6 +60,7 @@ export async function getTournamentById(id: string) {
                             avatar: true,
                             avatarFile: true,
                             email: true,
+                            usingAvatar:  true
                         },
                     },
                 },
