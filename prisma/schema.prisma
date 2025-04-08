@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
@@ -14,19 +14,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
-  avatar    String
-  salt      String
-  role      Role @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  avatar     String?
+  avatarFile Bytes?
+  salt       String
+  role       Role     @default(USER)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  contestants Contestant[] 
+  contestants Contestant[]
 }
 
 model Product {
@@ -36,48 +36,97 @@ model Product {
   updatedAt DateTime @updatedAt
 }
 
+model Event {
+  id          String           @id @default(cuid())
+  name        String
+  description String
+  rules       Json
+  startDate   DateTime
+  endDate     DateTime?
+  logo        Bytes?
+  location    String?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  tournaments Tournaments[]
+}
+
 model Tournaments {
-  id              String   @id @default(cuid())
+  id              String           @id @default(cuid())
   name            String
   description     String
-  prize          Json
-  startDate      DateTime
-  endDate        DateTime?  
-  status         TournamentStatus @default(UPCOMING)  
-  maxParticipants Int?     
-  location       String?    
-  rules          Json?     
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  prize           Json
+  startDate       DateTime
+  endDate         DateTime?
+  status          TournamentStatus @default(UPCOMING)
+  maxParticipants Int?
+  usingLogoPrice  Int?
+  price           Json
+  location        String?
+  rules           Json?
 
-  contestants    Contestant[] @relation("TournamentContestants")
+  disabled  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+  eventId   String
+  event     Event?   @relation(fields: [eventId], references: [id])
+
+  contestants Contestant[] @relation("TournamentContestants")
 }
 
 model Contestant {
-  id             String   @id @default(cuid())
-  playerType     PlayerType @default(INDIVIDUAL)
-  equipmentSource Boolean @default(true)
-  isVerified     Boolean @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              Int        @id @default(autoincrement())
+  playerType      PlayerType @default(INDIVIDUAL)
+  equipmentSource Boolean    @default(true)
+  equipmentOwned  Json?
+  isVerified      Boolean    @default(false)
+  usingLogo       Boolean    @default(false)
+  logo            Bytes?
+  optionPrice     Int        @default(0)
+  price           Int
+  storeName       String?
+  storeAddress    String?
+
+  shirtSize String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user   User   @relation(fields: [userId], references: [id])
-  userId String 
+  userId String
 
-  tournaments Tournaments[] @relation("TournamentContestants")
+  tournamentId String
+  tournament   Tournaments @relation(fields: [tournamentId], references: [id], name: "TournamentContestants")
 }
 
 enum Role {
   USER
-  STAKEHOLDER
+  SUPPORTER
+  VOLUNTEER
   DONOR
   ADMIN
+  VENDOR
+  SU
 }
 
 enum PlayerType {
   INDIVIDUAL
   INSTITUTION
   ASSOCIATION
+  BRAND
+  TEAM
+  ORGANIZATION
+  COMPANY
+  ENTITY
+  GROUP
+  CLUB
+  CORPORATION
+  PARTNERSHIP
+  FIRM
+  AGENCY
+  GOVERNMENT
   STORE
 }
 
@@ -86,4 +135,3 @@ enum TournamentStatus {
   ONGOING
   COMPLETED
 }
-

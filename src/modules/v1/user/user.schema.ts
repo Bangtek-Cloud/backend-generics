@@ -50,6 +50,7 @@ const loginResponseSchema = z.object({
 
 const userMeResponse = z.object({
     ...userCore,
+    id: z.string(),
     avatar: z.string(),
     role: z.string()
 })

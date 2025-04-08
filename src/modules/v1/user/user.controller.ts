@@ -15,7 +15,10 @@ export async function registerHandler(request: FastifyRequest<{ Body: CreateUser
             const user = await createUser(body)
             const users = {
                 id: user.id,
-                email: user.email
+                email: user.email,
+                publicMeta:{
+                    role: user.role
+                }
             }
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
@@ -53,7 +56,10 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
         if (correctPassword) {
             const users = {
                 id: user.id,
-                email: user.email
+                email: user.email,
+                publicMeta:{
+                    role: user.role
+                }
             }
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
@@ -104,19 +110,22 @@ export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInpu
         const redisAccessToken = await server.redis.get(`loginAccess:${decoded.id}`);
 
         if (!redisAccessToken) {
-            return reply.code(403).send({
-                code: 403,
+            return reply.code(440).send({
+                code: 440,
                 error: "Akses ditolak. Token tidak ditemukan di server.",
             });
         }
         const redisParse = JSON.parse(redisAccessToken);
         if (refresh !== redisParse.refreshToken) {
-            return reply.status(403).send({ message: "Sesi sudah berakhir, silahkan login ulang" })
+            return reply.status(440).send({ message: "Sesi sudah berakhir, silahkan login ulang" })
         }
         const user = await findUser(decoded.id)
         const users = {
             id: user.id,
-            email: user.email
+            email: user.email,
+            publicMeta:{
+                role: user.role
+            }
         }
         const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
         const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
