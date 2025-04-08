@@ -15,16 +15,17 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  name       String
-  email      String   @unique
-  password   String
-  avatar     String?
-  avatarFile Bytes?
-  salt       String
-  role       Role     @default(USER)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  avatar      String?
+  avatarFile  Bytes?
+  usingAvatar Boolean @default(false)
+  salt        String
+  role        Role     @default(USER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   contestants Contestant[]
 }
@@ -85,6 +86,7 @@ model Contestant {
   usingLogo       Boolean    @default(false)
   logo            Bytes?
   optionPrice     Int        @default(0)
+  contestantType  ConsType   @default(PLAYER)
   price           Int
   storeName       String?
   storeAddress    String?
@@ -103,12 +105,16 @@ model Contestant {
 
 enum Role {
   USER
+  ADMIN
+  STAKEHOLDER
+  SU
+}
+
+enum ConsType {
+  PLAYER
   SUPPORTER
   VOLUNTEER
   DONOR
-  ADMIN
-  VENDOR
-  SU
 }
 
 enum PlayerType {
