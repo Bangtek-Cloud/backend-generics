@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { createContestant, deleteContestant, getAllContestants, getContestant, updateContestant } from "./contestant.controller";
+import { createContestant, deleteContestant, exportDataTournamentHandler, getAllContestants, getContestant, updateContestant } from "./contestant.controller";
 
 async function contestantRoute(server: FastifyInstance) {
     server.get('/:tournament', {
@@ -21,6 +21,8 @@ async function contestantRoute(server: FastifyInstance) {
     server.delete('/:contestant', {
         preHandler: [server.authenticate]
     }, deleteContestant);
+
+    server.get('/export/:id/:bool',exportDataTournamentHandler)
 
 }
 

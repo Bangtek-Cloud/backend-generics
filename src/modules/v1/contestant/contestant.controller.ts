@@ -61,17 +61,17 @@ export async function createContestant(request: FastifyRequest, reply: FastifyRe
 
         let logoUrl = "";
         if (logoBuffer && logoFileName) {
-          // Buat bucket jika belum ada
-          const exists = await minioClient.bucketExists(bucketName);
-          if (!exists) {
-            await minioClient.makeBucket(bucketName, 'us-east-1');
-          }
-    
-          // Upload logo ke MinIO
-          await minioClient.putObject(bucketName, logoFileName, logoBuffer, logoBuffer.length);
-    
-          // URL akses (bisa disesuaikan)
-          logoUrl = `${bucketName}/${logoFileName}`;
+            // Buat bucket jika belum ada
+            const exists = await minioClient.bucketExists(bucketName);
+            if (!exists) {
+                await minioClient.makeBucket(bucketName, 'us-east-1');
+            }
+
+            // Upload logo ke MinIO
+            await minioClient.putObject(bucketName, logoFileName, logoBuffer, logoBuffer.length);
+
+            // URL akses (bisa disesuaikan)
+            logoUrl = `${bucketName}/${logoFileName}`;
         }
 
         const { playerType, phoneNo, equipmentSource, equipmentOwned, isVerified, shirtSize, usingLogo, price, optionPrice, storeName, storeAddress } = contestantData;
@@ -129,6 +129,7 @@ export async function updateContestant(request: FastifyRequest, reply: FastifyRe
         return reply.status(500).send({ success: false, message: "Error deleting contestant", error: error.message });
     }
 }
+
 export async function deleteContestant(request: FastifyRequest, reply: FastifyReply) {
     const { contestant } = request.params as { contestant: number };
     const userId = request.user.id
@@ -139,5 +140,68 @@ export async function deleteContestant(request: FastifyRequest, reply: FastifyRe
     catch (error) {
         console.error("Error deleting contestant:", error);
         return reply.status(500).send({ success: false, message: "Error deleting contestant", error: error.message });
+    }
+}
+
+export async function exportDataTournamentHandler(request: FastifyRequest, reply: FastifyReply) {
+    const { id, bool } = request.params as any;
+    try {
+        const contestant = await ContestantService.getAllContestantsWithCondition(id, bool);
+        const csvHeader = [
+            "Nomor Peserta",
+            "Foto Peserta",
+            "Nama Peserta",
+            "Email Peserta",
+            "No HP",
+            "Tipe Peserta",
+            "Logo",
+            "Peserta Mewakili",
+            "Alamat",
+            "Ukuran Baju",
+            "Alat sendiri",
+            "Alat dibawa",
+            "Paket dipilih",
+            "Harga Paket",
+            "Turnamen",
+            "Verifikasi"
+        ].map(col => `"${col}"`).join(',') + '\n'
+        const csvRows = contestant.map((c, index) => {
+            const priceList = c.tournament.price as { key: number; value: string, amount: number }[];
+            const selectedPackage = priceList.find(p => p.key === c.optionPrice)?.value || '';
+            const selectedPrice = priceList.find(p => p.key === c.optionPrice)?.amount || '';
+            return [
+                `"${c.id}"`,
+                `"${c.user.avatar}"`,
+                `"${c.user.name}"`,
+                `"${c.user.email}"`,
+                `"${c.phoneNo}"`,
+                `"${c.playerType}"`,
+                `"${c.logoUrl}"`,
+                `"${c.storeName}"`,
+                `"${c.storeAddress}"`,
+                `"${c.shirtSize}"`,
+                `"${c.equipmentSource ? "Alat Sendiri" : "Tidak membawa"}"`,
+                `"${c.equipmentOwned}"`,
+                `"${selectedPackage}"`,
+                `"${selectedPrice}"`,
+                `"${c.tournament.name}"`,
+                `"${c.isVerified ? "Sudah Verifikasi" : "Belum Verifikasi"}"`
+            ].join(',')
+        }).join('\n')
+
+
+
+        const csvContent = csvHeader + csvRows
+        reply.header('Content-Type', 'text/csv')
+        reply.header('Content-Disposition', 'attachment; filename=peserta-turnamen.csv')
+        reply.send(csvContent)
+
+        // reply.send(contestant)
+    } catch (error) {
+        console.log(error);
+        return reply.status(500).send({
+            code: 500,
+            message: "Internal server error",
+        })
     }
 }
