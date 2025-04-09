@@ -1,5 +1,24 @@
-import { Contestant, PlayerType } from "@prisma/client";
+import { Contestant, PlayerType, Prisma } from "@prisma/client";
 import prisma from "../../../utils/prisma";
+
+
+type ContestantWithUser = Prisma.ContestantGetPayload<{
+    include: {
+        user: {
+            select: {
+                name: true
+                email: true
+                avatar: true
+            }
+        },
+        tournament: {
+            select: {
+                price: true,
+                name: true
+            }
+        }
+    }
+}>
 
 export class ContestantService {
     static async createContestant(data: {
@@ -10,13 +29,13 @@ export class ContestantService {
         isVerified?: boolean;
         optionPrice?: number;
         usingLogo?: boolean;
-        logoUrl?:string;
+        logoUrl?: string;
         price: number;
         storeName?: string;
         storeAddress?: string;
         equipmentOwned?: string;
         shirtSize?: string;
-        phoneNo?:string;
+        phoneNo?: string;
     }): Promise<Contestant> {
         try {
             const newContestant = await prisma.contestant.create({
@@ -47,13 +66,53 @@ export class ContestantService {
             const contestants = await prisma.contestant.findMany({
                 where: { tournamentId },
             });
-    
+
             return contestants.map(contestant => ({
                 ...contestant,
                 logo: contestant.logo
                     ? (`data:image/png;base64,${Buffer.from(contestant.logo).toString("base64")}` as any)
                     : null,
             })) as unknown as Contestant[];
+        } catch (error) {
+            throw new Error(`Error fetching contestants: ${error.message}`);
+        }
+    }
+
+    static async getAllContestantsWithCondition(tournamentId: string, verified: string): Promise<ContestantWithUser[]> {
+        try {
+            const contestants = await prisma.contestant.findMany({
+                where: verified === "true" || verified === "false" ? {
+                    tournamentId,
+                    isVerified: verified === "true"
+                } : {
+                    tournamentId
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            avatar: true,
+                            email: true
+                        }
+                    },
+                    tournament: {
+                        select: {
+                            price: true,
+                            name: true
+                        }
+                    }
+                },
+            });
+
+            return contestants.map(contestant => ({
+                ...contestant,
+                logoUrl: contestant.logoUrl ? `http://103.187.146.79:9001/${contestant.logoUrl}` : null,
+                user: {
+                    ...contestant.user,
+                    avatar: contestant.user.avatar ? `http://103.187.146.79:9001/${contestant.user.avatar}` : null,
+                },
+                equipmentOwned: typeof contestant.equipmentOwned === "string" ? JSON.parse(contestant.equipmentOwned).join(",") : ""
+            }));
         } catch (error) {
             throw new Error(`Error fetching contestants: ${error.message}`);
         }
@@ -88,9 +147,9 @@ export class ContestantService {
                     updatedAt: true,
                 },
             });
-    
+
             if (!contestant) return null;
-    
+
             return {
                 ...contestant,
                 phoneNo: contestant.phoneNo || "",
@@ -104,9 +163,9 @@ export class ContestantService {
             throw new Error("Unknown error occurred while fetching contestant");
         }
     }
-    
-    
-    
+
+
+
 
     static async getContestantById(contestantId: number): Promise<Contestant | null> {
         try {
@@ -147,10 +206,10 @@ export class ContestantService {
     static async deleteContestant(contestantId: number, userId: string): Promise<Contestant> {
         try {
             const deletedContestant = await prisma.contestant.delete({
-                where: { 
+                where: {
                     id: Number(contestantId),
                     userId,
-                 },
+                },
             });
             return deletedContestant;
         } catch (error) {
