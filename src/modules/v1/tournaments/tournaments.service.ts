@@ -41,7 +41,14 @@ export async function getAllTournaments() {
         }
     })
 
-    return tournaments;
+    const tournamentsWithParsedRules = tournaments.map((tournament) => ({
+        ...tournament,
+        event: {
+            ...tournament.event,
+            rules: JSON.parse(typeof tournament.event.rules === "string" ? tournament.event.rules : "{}") ?? {}
+        }
+    }));
+    return tournamentsWithParsedRules;
     // return tournaments
 }
 
@@ -79,7 +86,6 @@ export async function getTournamentById(id: string) {
         return null;
     }
 
-    // Transformasi logo untuk setiap contestant
     const contestantsWithLogo = tournament.contestants.map((contestant) => {
         return {
             ...contestant,
