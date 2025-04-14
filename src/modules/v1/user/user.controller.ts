@@ -4,6 +4,7 @@ import { CreateUserInput, LoginInput, RefreshInput, UpdateInput } from "./user.s
 import { verifyPassword } from "../../../utils/hash";
 import { server } from "../../../server";
 import { JWTPayload } from "src/types";
+import { createMinioClient } from "../../../utils/minio";
 
 export async function registerHandler(request: FastifyRequest<{ Body: CreateUserInput }>, reply: FastifyReply) {
     const body = request.body
@@ -88,17 +89,62 @@ export async function meHandler(request: FastifyRequest, reply: FastifyReply) {
     return users;
 }
 
-export async function updateHandler(request: FastifyRequest<{ Body: UpdateInput }>, reply: FastifyReply) {
+export async function updateHandler(request: FastifyRequest, reply: FastifyReply) {
     try {
-        const id = request.user.id;
-        const body = request.body
-        await updateUser(id, body)
-        return reply.code(200).send({ message: 'Profil berhasil diperbarui' });
+      const id = request.user.id;
+      const minioClient = createMinioClient(request.server);
+      const bucketName = "user-avatar";
+      const parts = request.parts();
+  
+      let avatarBuffer: Buffer | undefined;
+      let avatarUrl: string | undefined;
+      let fullName: string | undefined;
+  
+      for await (const part of parts) {
+        if (part.type === "file") {
+          const chunks: Buffer[] = [];
+          for await (const chunk of part.file) {
+            chunks.push(chunk);
+          }
+          avatarBuffer = Buffer.concat(chunks);
+  
+          const ext = part.filename?.split(".").pop() || "png";
+          const fileName = `avatar-${crypto.randomUUID()}.${ext}`;
+  
+          const exists = await minioClient.bucketExists(bucketName);
+          if (!exists) {
+            await minioClient.makeBucket(bucketName, "us-east-1");
+          }
+  
+          await minioClient.putObject(bucketName, fileName, avatarBuffer, avatarBuffer.length);
+          avatarUrl = `${bucketName}/${fileName}`;
+        } else if (part.fieldname === "fullName") {
+          fullName = part.value?.toString().trim();
+        }
+      }
+  
+      const user = await findUser(id);
+  
+      const updatePayload: Record<string, any> = {
+        name: fullName ?? user.name,
+        avatar: avatarUrl ?? user.avatar,
+      };
+  
+      // Jika upload avatar, set usingAvatar jadi true
+      if (avatarUrl) {
+        updatePayload.usingAvatar = true;
+      }
+  
+      await updateUser(id, updatePayload);
+  
+      return reply.code(200).send({ message: "Profil berhasil diperbarui" });
     } catch (error) {
-        console.error(error);
-        return reply.code(500).send({ message: "Terjadi kesalahan server", error });
+      console.error("Gagal update profil:", error);
+      return reply.code(500).send({ message: "Terjadi kesalahan server", error: error.message });
     }
-}
+  }
+  
+  
 
 export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInput }>, reply: FastifyReply) {
     try {

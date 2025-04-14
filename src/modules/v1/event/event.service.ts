@@ -7,7 +7,8 @@ export class EventService {
         description?: string;
         startDate: Date;
         endDate: Date;
-        logo?: Buffer;
+        // logo?: Buffer;
+        eventLogoUrl: string; 
         location?: string;
         isActive?: boolean;
         rules?: string;
@@ -21,7 +22,8 @@ export class EventService {
                     endDate: data.endDate || new Date(),
                     location: data.location || undefined,
                     isActive: data.isActive ?? true,
-                    logo: data.logo || undefined,
+                    eventLogoUrl: data.eventLogoUrl ?? "",
+                    // logo: data.logo || undefined,
                     rules: data.rules || undefined,
                 },
             });
@@ -44,9 +46,7 @@ export class EventService {
             return events.map((event) => ({
                 ...event,
                 rules: JSON.parse(typeof event.rules === "string" ? event.rules : "[]"),
-                logo: event.logo
-                    ? (`data:image/png;base64,${Buffer.from(event.logo).toString("base64")}` as any)
-                    : null,
+                logo: false,
             })) as unknown as Event[];
         } catch (error) {
             throw new Error(`Gagal mendapatkan semua event: ${error.message}`);
@@ -79,7 +79,7 @@ export class EventService {
         description?: string;
         startDate: Date;
         endDate: Date;
-        logo?: Buffer;
+        eventLogoUrl?: string;
         location?: string;
         isActive?: boolean;
         rules?: string;
@@ -95,7 +95,7 @@ export class EventService {
                     endDate: data.endDate || undefined,
                     location: data.location || undefined,
                     isActive: data.isActive,
-                    logo: data.logo || undefined,
+                    eventLogoUrl: data.eventLogoUrl ?? "",
                     rules: data.rules || undefined,
                 },
             });

@@ -27,13 +27,29 @@ console.info("CORS installed");
 console.info('Install Env');
 const schema = {
     type: "object",
-    required: ["JWT_SECRET", "REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASS"],
+    required: [
+        "JWT_SECRET",
+        "REDIS_HOST",
+        "REDIS_PORT",
+        "REDIS_USER",
+        "REDIS_PASS",
+        'MINIO_ENDPOINT',
+        'MINIO_PORT',
+        'MINIO_USE_SSL',
+        'MINIO_ACCESS_KEY',
+        'MINIO_SECRET_KEY',
+    ],
     properties: {
         JWT_SECRET: { type: "string" },
         REDIS_HOST: { type: "string" },
         REDIS_PORT: { type: "number" },
         REDIS_USER: { type: "string" },
         REDIS_PASS: { type: "string" },
+        MINIO_ENDPOINT: { type: 'string' },
+        MINIO_PORT: { type: 'string' },
+        MINIO_USE_SSL: { type: 'string' },
+        MINIO_ACCESS_KEY: { type: 'string' },
+        MINIO_SECRET_KEY: { type: 'string' },
     },
 };
 

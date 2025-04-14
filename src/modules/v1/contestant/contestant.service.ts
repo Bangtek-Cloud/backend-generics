@@ -1,5 +1,24 @@
-import { Contestant, PlayerType } from "@prisma/client";
+import { Contestant, PlayerType, Prisma } from "@prisma/client";
 import prisma from "../../../utils/prisma";
+
+
+type ContestantWithUser = Prisma.ContestantGetPayload<{
+    include: {
+        user: {
+            select: {
+                name: true
+                email: true
+                avatar: true
+            }
+        },
+        tournament: {
+            select: {
+                price: true,
+                name: true
+            }
+        }
+    }
+}>
 
 export class ContestantService {
     static async createContestant(data: {
@@ -10,12 +29,13 @@ export class ContestantService {
         isVerified?: boolean;
         optionPrice?: number;
         usingLogo?: boolean;
-        logo?: Buffer;
+        logoUrl?: string;
         price: number;
         storeName?: string;
         storeAddress?: string;
         equipmentOwned?: string;
         shirtSize?: string;
+        phoneNo?: string;
     }): Promise<Contestant> {
         try {
             const newContestant = await prisma.contestant.create({
@@ -27,12 +47,13 @@ export class ContestantService {
                     isVerified: data.isVerified || false,
                     usingLogo: data.usingLogo || false,
                     optionPrice: data.optionPrice || undefined,
-                    logo: data.logo || undefined,
+                    logoUrl: data.logoUrl || "",
                     price: data.price,
                     storeName: data.storeName || undefined,
                     storeAddress: data.storeAddress || undefined,
                     equipmentOwned: data.equipmentOwned || [""],
-                    shirtSize: data.shirtSize || ""
+                    shirtSize: data.shirtSize || "",
+                    phoneNo: data.phoneNo
                 },
             });
             return newContestant;
@@ -45,13 +66,53 @@ export class ContestantService {
             const contestants = await prisma.contestant.findMany({
                 where: { tournamentId },
             });
-    
+
             return contestants.map(contestant => ({
                 ...contestant,
                 logo: contestant.logo
                     ? (`data:image/png;base64,${Buffer.from(contestant.logo).toString("base64")}` as any)
                     : null,
             })) as unknown as Contestant[];
+        } catch (error) {
+            throw new Error(`Error fetching contestants: ${error.message}`);
+        }
+    }
+
+    static async getAllContestantsWithCondition(tournamentId: string, verified: string): Promise<ContestantWithUser[]> {
+        try {
+            const contestants = await prisma.contestant.findMany({
+                where: verified === "true" || verified === "false" ? {
+                    tournamentId,
+                    isVerified: verified === "true"
+                } : {
+                    tournamentId
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            avatar: true,
+                            email: true
+                        }
+                    },
+                    tournament: {
+                        select: {
+                            price: true,
+                            name: true
+                        }
+                    }
+                },
+            });
+
+            return contestants.map(contestant => ({
+                ...contestant,
+                logoUrl: contestant.logoUrl ? `http://103.187.146.79:9001/${contestant.logoUrl}` : null,
+                user: {
+                    ...contestant.user,
+                    avatar: contestant.user.avatar ? `http://103.187.146.79:9001/${contestant.user.avatar}` : null,
+                },
+                equipmentOwned: typeof contestant.equipmentOwned === "string" ? JSON.parse(contestant.equipmentOwned).join(",") : ""
+            }));
         } catch (error) {
             throw new Error(`Error fetching contestants: ${error.message}`);
         }
@@ -72,7 +133,7 @@ export class ContestantService {
                     equipmentSource: true,
                     isVerified: true,
                     usingLogo: true,
-                    logo: true,
+                    logoUrl: true,
                     price: true,
                     storeName: true,
                     equipmentOwned: true,
@@ -80,18 +141,20 @@ export class ContestantService {
                     storeAddress: true,
                     tournament: true,
                     optionPrice: true,
+                    phoneNo: true,
+                    contestantType: true,
                     createdAt: true,
                     updatedAt: true,
                 },
             });
-    
+
             if (!contestant) return null;
-    
+
             return {
                 ...contestant,
-                logo: contestant.logo
-                    ? `data:image/png;base64,${Buffer.from(contestant.logo as Buffer).toString("base64")}`
-                    : null,
+                phoneNo: contestant.phoneNo || "",
+                contestantType: contestant.contestantType || "PLAYER",
+                logo: null, // Add a default value for the logo property
             };
         } catch (error) {
             if (error instanceof Error) {
@@ -100,9 +163,9 @@ export class ContestantService {
             throw new Error("Unknown error occurred while fetching contestant");
         }
     }
-    
-    
-    
+
+
+
 
     static async getContestantById(contestantId: number): Promise<Contestant | null> {
         try {
@@ -143,10 +206,10 @@ export class ContestantService {
     static async deleteContestant(contestantId: number, userId: string): Promise<Contestant> {
         try {
             const deletedContestant = await prisma.contestant.delete({
-                where: { 
+                where: {
                     id: Number(contestantId),
                     userId,
-                 },
+                },
             });
             return deletedContestant;
         } catch (error) {
