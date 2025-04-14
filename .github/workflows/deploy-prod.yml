@@ -1,4 +1,4 @@
-name: Deploy Fastify App
+name: Deploy to Production
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: prod
 
     steps:
       - name: Checkout kode
@@ -35,7 +36,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_SECRET }}
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/fastify-app:latest
             cd fastify-app
