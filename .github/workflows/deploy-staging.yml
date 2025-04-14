@@ -3,7 +3,7 @@ name: Deploy to beta server
 on:
   push:
     branches:
-      - staging
+      - beta-staging
 
 jobs:
   deploy:
