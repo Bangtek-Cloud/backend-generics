@@ -37,6 +37,8 @@ model Product {
   updatedAt DateTime @updatedAt
 }
 
+
+
 model Event {
   id            String           @id @default(cuid())
   name          String
@@ -50,8 +52,18 @@ model Event {
   isActive      Boolean          @default(true)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+  showInWeb     Boolean          @default(false)
 
   tournaments Tournaments[]
+  sponsorWeb  SponsorInWeb[]
+}
+
+model SponsorInWeb {
+  id            String           @id @default(cuid())
+  name          String
+
+  eventId   String
+  event     Event?   @relation(fields: [eventId], references: [id])
 }
 
 model Tournaments {

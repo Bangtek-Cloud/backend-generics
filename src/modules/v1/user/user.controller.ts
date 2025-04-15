@@ -64,14 +64,17 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
             }
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
+            await server.redis.ping();
 
             await server.redis.del(`loginAccess:${user.id}`);
+            console.info(`Successfully deleted previous token for user ${user.id}`);
 
             const tokenizer = JSON.stringify({
                 accessToken,
                 refreshToken,
             })
             await server.redis.setex(`loginAccess:${user.id}`, 86400, tokenizer);
+            console.info(`Successfully stored new token for user ${user.id}`);
 
             return reply.send({ accessToken, refreshToken });
         }

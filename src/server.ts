@@ -69,23 +69,19 @@ const redis = new Redis({
     host: process.env.REDIS_HOST,
     port: Number(process.env.REDIS_PORT),
     username: process.env.REDIS_USER,
-    password: process.env.REDIS_PASS
+    password: process.env.REDIS_PASS,
+    retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);  // Meningkatkan waktu retry
+        return delay;
+    }
 });
-console.info("Redis installed");
-console.info("Install Redis Client");
-// Register Redis client
 
 server.register(fastifyRedis, {
     client: redis,
     closeClient: true
 });
-console.info("Redis Client installed");
-console.info("Install JWT");
 
 server.register(fjwt, { secret: process.env.JWT_SECRET });
-
-console.info("JWT installed");
-
 server.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
     try {
         const header = request.headers.authorization;
