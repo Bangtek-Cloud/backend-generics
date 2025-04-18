@@ -65,7 +65,7 @@ server.register(fastifyMultipart ,{
     limits: {
         fieldNameSize: 1000,
         fieldSize: 10000000,
-        fileSize: 10 * 1024 * 1024
+        fileSize: 30 * 1024 * 1024
     }
 });
 console.info("Multipart installed");
