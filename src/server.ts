@@ -61,7 +61,13 @@ const options = {
 server.register(fastifyEnv, options)
 console.info("Env installed");
 console.info("Install Multipart");
-server.register(fastifyMultipart);
+server.register(fastifyMultipart ,{
+    limits: {
+        fieldNameSize: 1000,
+        fieldSize: 10000000,
+        fileSize: 30 * 1024 * 1024
+    }
+});
 console.info("Multipart installed");
 console.info("Install Redis");
 
