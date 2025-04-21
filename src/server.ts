@@ -72,7 +72,11 @@ const redis = new Redis({
     host: process.env.REDIS_HOST,
     port: Number(process.env.REDIS_PORT),
     username: process.env.REDIS_USER,
-    password: process.env.REDIS_PASS
+    password: process.env.REDIS_PASS,
+    retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+    }
 });
 
 server.register(fastifyRedis, {
