@@ -15,7 +15,6 @@ import eventRoute from "./modules/v1/event/event.route";
 
 export const server = Fastify({ logger: true });
 
-console.info("Install CORS");
 server.register(cors, {
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -23,8 +22,7 @@ server.register(cors, {
     preflightContinue: false,
     credentials: true,
 });
-console.info("CORS installed");
-console.info('Install Env');
+
 const schema = {
     type: "object",
     required: [
@@ -38,6 +36,7 @@ const schema = {
         'MINIO_USE_SSL',
         'MINIO_ACCESS_KEY',
         'MINIO_SECRET_KEY',
+        'S3_URL',
     ],
     properties: {
         JWT_SECRET: { type: "string" },
@@ -50,6 +49,7 @@ const schema = {
         MINIO_USE_SSL: { type: 'string' },
         MINIO_ACCESS_KEY: { type: 'string' },
         MINIO_SECRET_KEY: { type: 'string' },
+        S3_URL: { type: 'string' },
     },
 };
 
@@ -59,8 +59,7 @@ const options = {
     data: process.env
 }
 server.register(fastifyEnv, options)
-console.info("Env installed");
-console.info("Install Multipart");
+
 server.register(fastifyMultipart ,{
     limits: {
         fieldNameSize: 1000,
@@ -68,8 +67,6 @@ server.register(fastifyMultipart ,{
         fileSize: 30 * 1024 * 1024
     }
 });
-console.info("Multipart installed");
-console.info("Install Redis");
 
 const redis = new Redis({
     host: process.env.REDIS_HOST,
@@ -77,20 +74,13 @@ const redis = new Redis({
     username: process.env.REDIS_USER,
     password: process.env.REDIS_PASS
 });
-console.info("Redis installed");
-console.info("Install Redis Client");
-// Register Redis client
 
 server.register(fastifyRedis, {
     client: redis,
     closeClient: true
 });
-console.info("Redis Client installed");
-console.info("Install JWT");
 
 server.register(fjwt, { secret: process.env.JWT_SECRET });
-
-console.info("JWT installed");
 
 server.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
     try {
@@ -131,8 +121,6 @@ server.decorate("authenticate", async function (request: FastifyRequest, reply: 
     }
 });
 
-
-// Middleware untuk otorisasi RBAC
 server.decorate("authorize", (roles: string[]) => {
     return async function (request: FastifyRequest, reply: FastifyReply) {
         try {
@@ -155,8 +143,6 @@ server.decorate("authorize", (roles: string[]) => {
     };
 });
 
-
-// Register schema & routes
 async function setupServer() {
     for (const schema of [...userSchemas]) {
         server.addSchema(schema);
