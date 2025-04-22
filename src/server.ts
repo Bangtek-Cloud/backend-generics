@@ -12,10 +12,10 @@ import tournamentRoutes from "./modules/v1/tournaments/tournaments.route";
 import contestantRoute from "./modules/v1/contestant/contestant.route";
 import fastifyMultipart from "@fastify/multipart";
 import eventRoute from "./modules/v1/event/event.route";
+import webRoute from "./modules/v1/web/web.route";
 
 export const server = Fastify({ logger: true });
 
-console.info("Install CORS");
 server.register(cors, {
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -23,8 +23,7 @@ server.register(cors, {
     preflightContinue: false,
     credentials: true,
 });
-console.info("CORS installed");
-console.info('Install Env');
+
 const schema = {
     type: "object",
     required: [
@@ -38,6 +37,7 @@ const schema = {
         'MINIO_USE_SSL',
         'MINIO_ACCESS_KEY',
         'MINIO_SECRET_KEY',
+        'S3_URL',
     ],
     properties: {
         JWT_SECRET: { type: "string" },
@@ -50,6 +50,7 @@ const schema = {
         MINIO_USE_SSL: { type: 'string' },
         MINIO_ACCESS_KEY: { type: 'string' },
         MINIO_SECRET_KEY: { type: 'string' },
+        S3_URL: { type: 'string' },
     },
 };
 
@@ -59,8 +60,7 @@ const options = {
     data: process.env
 }
 server.register(fastifyEnv, options)
-console.info("Env installed");
-console.info("Install Multipart");
+
 server.register(fastifyMultipart ,{
     limits: {
         fieldNameSize: 1000,
@@ -68,8 +68,6 @@ server.register(fastifyMultipart ,{
         fileSize: 30 * 1024 * 1024
     }
 });
-console.info("Multipart installed");
-console.info("Install Redis");
 
 const redis = new Redis({
     host: process.env.REDIS_HOST,
@@ -77,7 +75,7 @@ const redis = new Redis({
     username: process.env.REDIS_USER,
     password: process.env.REDIS_PASS,
     retryStrategy: (times) => {
-        const delay = Math.min(times * 50, 2000);  // Meningkatkan waktu retry
+        const delay = Math.min(times * 50, 2000);
         return delay;
     }
 });
@@ -127,8 +125,6 @@ server.decorate("authenticate", async function (request: FastifyRequest, reply: 
     }
 });
 
-
-// Middleware untuk otorisasi RBAC
 server.decorate("authorize", (roles: string[]) => {
     return async function (request: FastifyRequest, reply: FastifyReply) {
         try {
@@ -151,8 +147,6 @@ server.decorate("authorize", (roles: string[]) => {
     };
 });
 
-
-// Register schema & routes
 async function setupServer() {
     for (const schema of [...userSchemas]) {
         server.addSchema(schema);
@@ -167,6 +161,7 @@ async function setupServer() {
     server.register(tournamentRoutes, { prefix: "/api/v1/tournaments" });
     server.register(contestantRoute, { prefix: "/api/v1/contestants" });
     server.register(eventRoute, { prefix: "/api/v1/events" });
+    server.register(webRoute, { prefix: "/api/v1/web" });
 
     await server.ready();
 }

@@ -118,6 +118,29 @@ model Contestant {
   tournament   Tournaments @relation(fields: [tournamentId], references: [id], name: "TournamentContestants")
 }
 
+model WebsiteView {
+  id String @id @default(cuid())
+  show Boolean @default(false)
+  order Int
+  type Int
+  content Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routeId String
+  route   WebsiteRoute @relation(fields: [routeId], references: [id])
+}
+
+model WebsiteRoute {
+  id String @id @default(cuid())
+  path String @default("")
+  url String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  views WebsiteView[]
+}
+
 enum Role {
   USER
   ADMIN
