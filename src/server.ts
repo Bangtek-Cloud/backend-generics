@@ -12,6 +12,7 @@ import tournamentRoutes from "./modules/v1/tournaments/tournaments.route";
 import contestantRoute from "./modules/v1/contestant/contestant.route";
 import fastifyMultipart from "@fastify/multipart";
 import eventRoute from "./modules/v1/event/event.route";
+import webRoute from "./modules/v1/web/web.route";
 
 export const server = Fastify({ logger: true });
 
@@ -161,6 +162,7 @@ async function setupServer() {
     server.register(tournamentRoutes, { prefix: "/api/v1/tournaments" });
     server.register(contestantRoute, { prefix: "/api/v1/contestants" });
     server.register(eventRoute, { prefix: "/api/v1/events" });
+    server.register(webRoute, { prefix: "/api/v1/web" });
 
     await server.ready();
 }
