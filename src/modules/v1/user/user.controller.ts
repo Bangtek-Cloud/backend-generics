@@ -73,7 +73,7 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
                 accessToken,
                 refreshToken,
             })
-            await server.redis.setex(`loginAccess:${user.id}`, 86400, tokenizer);
+            await server.redis.setex(`loginAccess:${user.id}`, 259200, tokenizer);
             console.info(`Successfully stored new token for user ${user.id}`);
 
             return reply.send({ accessToken, refreshToken });
