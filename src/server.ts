@@ -86,7 +86,6 @@ server.register(fastifyRedis, {
 });
 
 server.register(fjwt, { secret: process.env.JWT_SECRET });
-
 server.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
     try {
       const header = request.headers.authorization;
