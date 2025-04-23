@@ -89,42 +89,60 @@ server.register(fjwt, { secret: process.env.JWT_SECRET });
 
 server.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
     try {
-        const header = request.headers.authorization;
-        if (!header || !header.startsWith("Bearer ")) {
-            return reply.code(440).send({
-                code: 440,
-                error: "Token tidak ditemukan atau tidak valid. Silakan login kembali.",
-            });
-        }
-
-        const token = header.split(" ")[1];
-        const decoded = await request.jwtVerify<JWTPayload>();
-
-        const redisAccessToken = await redis.get(`loginAccess:${decoded.id}`);
-
-        if (!redisAccessToken) {
-            return reply.code(440).send({
-                code: 440,
-                error: "Akses ditolak. Token tidak ditemukan di server.",
-            });
-        }
-        const redisParse = JSON.parse(redisAccessToken);
-
-        if (redisParse.accessToken !== token) {
-            return reply.code(440).send({
-                code: 440,
-                error: "Sesi tidak valid atau Anda telah login di perangkat lain. Silakan login kembali.",
-            });
-        }
-
-        // Jika semua valid, lanjutkan ke route selanjutnya
-    } catch (e) {
-        return reply.code(440).send({
-            code: 440,
-            error: "Token tidak valid atau telah kedaluwarsa. Silakan login kembali.",
+      const header = request.headers.authorization;
+      if (!header || !header.startsWith("Bearer ")) {
+        return reply.code(401).send({
+          code: 401,
+          error: "Token tidak ditemukan atau format salah.",
         });
+      }
+  
+      const token = header.split(" ")[1];
+  
+      let decoded: JWTPayload;
+      try {
+        decoded = await request.jwtVerify<JWTPayload>();
+      } catch (e: any) {
+        if (e.name === "TokenExpiredError") {
+          return reply.code(401).send({
+            code: 401,
+            error: "Token telah kedaluwarsa.",
+          });
+        }
+        return reply.code(401).send({
+          code: 401,
+          error: "Token tidak valid.",
+        });
+      }
+  
+      const redisAccessToken = await redis.get(`loginAccess:${decoded.id}`);
+  
+      if (!redisAccessToken) {
+        return reply.code(440).send({
+          code: 440,
+          error: "Akses ditolak. Token tidak ditemukan di server.",
+        });
+      }
+  
+      const redisParse = JSON.parse(redisAccessToken);
+  
+      if (redisParse.accessToken !== token) {
+        return reply.code(440).send({
+          code: 440,
+          error: "Sesi tidak valid atau Anda telah login di perangkat lain.",
+        });
+      }
+  
+      // Jika semua valid, lanjut
+    } catch (e) {
+      console.error("Internal auth error", e);
+      return reply.code(500).send({
+        code: 500,
+        error: "Terjadi kesalahan saat otentikasi.",
+      });
     }
-});
+  });
+  
 
 server.decorate("authorize", (roles: string[]) => {
     return async function (request: FastifyRequest, reply: FastifyReply) {
