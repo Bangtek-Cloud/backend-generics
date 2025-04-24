@@ -44,3 +44,18 @@ export async function updateUser(id: string, data:any) {
         data
     })
 }
+
+export async function getAllUser() {
+    return prisma.user.findMany({
+        select: {
+            id: true,
+            name : true,
+            email : true,
+            role: true,
+            avatar : true,
+            avatarFile : true,
+            usingAvatar : true,
+            updatedAt : true,
+        }
+    })
+}
