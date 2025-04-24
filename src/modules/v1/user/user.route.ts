@@ -1,5 +1,17 @@
 import { FastifyInstance } from "fastify";
-import { registerHandler, loginHandler, meHandler, updateHandler, refreshHandler } from "./user.controller";
+import {
+    registerHandler,
+    loginHandler,
+    meHandler,
+    updateHandler,
+    refreshHandler,
+    getAllHandler,
+    updatePasswordHandler,
+    forceUpdatePasswordHandler,
+    getUserByIdHandler,
+    forceUpdateHandler,
+    changeUserToAdmin
+} from "./user.controller";
 import { $ref } from "./user.schema";
 
 async function userRoutes(server: FastifyInstance) {
@@ -36,18 +48,24 @@ async function userRoutes(server: FastifyInstance) {
         }
     }, refreshHandler)
 
+    server.get('/all-user', { preHandler: [server.authenticate, server.authorize(["ADMIN", "SU"])] }, getAllHandler)
+
     server.put('/updateMe', {
         preHandler: [server.authenticate]
     }, updateHandler)
 
-    //! Route dengan RBAC untuk admin
-    //! server.get(
-    //!     "/admin",
-    //!    { preHandler: [server.authenticate, server.authorize(["ADMIN","USER"])] },
-    //!    async (request, reply) => {
-    //!        return { message: "Selamat datang di halaman admin!" };
-    //!    }
-    //! );
+    server.put('/update-password', {
+        preHandler: [server.authenticate]
+    }, updatePasswordHandler)
+
+    server.put('/force-update-password', {
+        preHandler: [server.authenticate, server.authorize(["ADMIN", "SU"])]
+    }, forceUpdatePasswordHandler)
+
+    server.get('/:id', { preHandler: [server.authenticate, server.authorize(["ADMIN", "SU"])] }, getUserByIdHandler)
+    server.put('/force-update/:id', { preHandler: [server.authenticate, server.authorize(["ADMIN", "SU"])] }, forceUpdateHandler)
+
+    server.post('/changerole', { preHandler: [server.authenticate, server.authorize(["SU"])] }, changeUserToAdmin)
 }
 
 export default userRoutes;
