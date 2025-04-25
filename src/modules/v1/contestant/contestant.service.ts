@@ -106,10 +106,10 @@ export class ContestantService {
 
             return contestants.map(contestant => ({
                 ...contestant,
-                logoUrl: contestant.logoUrl ? `http://103.187.146.79:9001/${contestant.logoUrl}` : null,
+                logoUrl: contestant.logoUrl ? process.env.S3_URL + contestant.logoUrl : null,
                 user: {
                     ...contestant.user,
-                    avatar: contestant.user.avatar ? `http://103.187.146.79:9001/${contestant.user.avatar}` : null,
+                    avatar: contestant.user.avatar ? process.env.S3_URL + contestant.user.avatar : null,
                 },
                 equipmentOwned: typeof contestant.equipmentOwned === "string" ? JSON.parse(contestant.equipmentOwned).join(",") : ""
             }));

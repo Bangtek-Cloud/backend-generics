@@ -37,6 +37,8 @@ model Product {
   updatedAt DateTime @updatedAt
 }
 
+
+
 model Event {
   id            String           @id @default(cuid())
   name          String
@@ -50,8 +52,18 @@ model Event {
   isActive      Boolean          @default(true)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+  showInWeb     Boolean          @default(false)
 
   tournaments Tournaments[]
+  sponsorWeb  SponsorInWeb[]
+}
+
+model SponsorInWeb {
+  id            String           @id @default(cuid())
+  name          String
+
+  eventId   String
+  event     Event?   @relation(fields: [eventId], references: [id])
 }
 
 model Tournaments {
@@ -104,6 +116,29 @@ model Contestant {
 
   tournamentId String
   tournament   Tournaments @relation(fields: [tournamentId], references: [id], name: "TournamentContestants")
+}
+
+model WebsiteView {
+  id String @id @default(cuid())
+  show Boolean @default(false)
+  order Int
+  type Int
+  content Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routeId String
+  route   WebsiteRoute @relation(fields: [routeId], references: [id])
+}
+
+model WebsiteRoute {
+  id String @id @default(cuid())
+  path String @default("")
+  url String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  views WebsiteView[]
 }
 
 enum Role {

@@ -12,10 +12,10 @@ import tournamentRoutes from "./modules/v1/tournaments/tournaments.route";
 import contestantRoute from "./modules/v1/contestant/contestant.route";
 import fastifyMultipart from "@fastify/multipart";
 import eventRoute from "./modules/v1/event/event.route";
+import webRoute from "./modules/v1/web/web.route";
 
 export const server = Fastify({ logger: true });
 
-console.info("Install CORS");
 server.register(cors, {
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -23,8 +23,7 @@ server.register(cors, {
     preflightContinue: false,
     credentials: true,
 });
-console.info("CORS installed");
-console.info('Install Env');
+
 const schema = {
     type: "object",
     required: [
@@ -38,6 +37,7 @@ const schema = {
         'MINIO_USE_SSL',
         'MINIO_ACCESS_KEY',
         'MINIO_SECRET_KEY',
+        'S3_URL',
     ],
     properties: {
         JWT_SECRET: { type: "string" },
@@ -50,6 +50,7 @@ const schema = {
         MINIO_USE_SSL: { type: 'string' },
         MINIO_ACCESS_KEY: { type: 'string' },
         MINIO_SECRET_KEY: { type: 'string' },
+        S3_URL: { type: 'string' },
     },
 };
 
@@ -59,8 +60,7 @@ const options = {
     data: process.env
 }
 server.register(fastifyEnv, options)
-console.info("Env installed");
-console.info("Install Multipart");
+
 server.register(fastifyMultipart ,{
     limits: {
         fieldNameSize: 1000,
@@ -68,71 +68,81 @@ server.register(fastifyMultipart ,{
         fileSize: 30 * 1024 * 1024
     }
 });
-console.info("Multipart installed");
-console.info("Install Redis");
 
 const redis = new Redis({
     host: process.env.REDIS_HOST,
     port: Number(process.env.REDIS_PORT),
     username: process.env.REDIS_USER,
-    password: process.env.REDIS_PASS
+    password: process.env.REDIS_PASS,
+    retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+    }
 });
-console.info("Redis installed");
-console.info("Install Redis Client");
-// Register Redis client
 
 server.register(fastifyRedis, {
     client: redis,
     closeClient: true
 });
-console.info("Redis Client installed");
-console.info("Install JWT");
 
 server.register(fjwt, { secret: process.env.JWT_SECRET });
-
-console.info("JWT installed");
-
 server.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
     try {
-        const header = request.headers.authorization;
-        if (!header || !header.startsWith("Bearer ")) {
-            return reply.code(440).send({
-                code: 440,
-                error: "Token tidak ditemukan atau tidak valid. Silakan login kembali.",
-            });
-        }
-
-        const token = header.split(" ")[1];
-        const decoded = await request.jwtVerify<JWTPayload>();
-
-        const redisAccessToken = await redis.get(`loginAccess:${decoded.id}`);
-
-        if (!redisAccessToken) {
-            return reply.code(440).send({
-                code: 440,
-                error: "Akses ditolak. Token tidak ditemukan di server.",
-            });
-        }
-        const redisParse = JSON.parse(redisAccessToken);
-
-        if (redisParse.accessToken !== token) {
-            return reply.code(440).send({
-                code: 440,
-                error: "Sesi tidak valid atau Anda telah login di perangkat lain. Silakan login kembali.",
-            });
-        }
-
-        // Jika semua valid, lanjutkan ke route selanjutnya
-    } catch (e) {
-        return reply.code(440).send({
-            code: 440,
-            error: "Token tidak valid atau telah kedaluwarsa. Silakan login kembali.",
+      const header = request.headers.authorization;
+      if (!header || !header.startsWith("Bearer ")) {
+        return reply.code(401).send({
+          code: 401,
+          error: "Token tidak ditemukan atau format salah.",
         });
+      }
+  
+      const token = header.split(" ")[1];
+  
+      let decoded: JWTPayload;
+      try {
+        decoded = await request.jwtVerify<JWTPayload>();
+      } catch (e: any) {
+        if (e.name === "TokenExpiredError") {
+          return reply.code(401).send({
+            code: 401,
+            error: "Token telah kedaluwarsa.",
+          });
+        }
+        return reply.code(401).send({
+          code: 401,
+          error: "Token tidak valid.",
+        });
+      }
+  
+      const redisAccessToken = await redis.get(`loginAccess:${decoded.id}`);
+  
+      if (!redisAccessToken) {
+        return reply.code(440).send({
+          code: 440,
+          error: "Akses ditolak. Token tidak ditemukan di server.",
+        });
+      }
+  
+      const redisParse = JSON.parse(redisAccessToken);
+  
+      if (redisParse.accessToken !== token) {
+        return reply.code(440).send({
+          code: 440,
+          error: "Sesi tidak valid atau Anda telah login di perangkat lain.",
+        });
+      }
+  
+      // Jika semua valid, lanjut
+    } catch (e) {
+      console.error("Internal auth error", e);
+      return reply.code(500).send({
+        code: 500,
+        error: "Terjadi kesalahan saat otentikasi.",
+      });
     }
-});
+  });
+  
 
-
-// Middleware untuk otorisasi RBAC
 server.decorate("authorize", (roles: string[]) => {
     return async function (request: FastifyRequest, reply: FastifyReply) {
         try {
@@ -155,8 +165,6 @@ server.decorate("authorize", (roles: string[]) => {
     };
 });
 
-
-// Register schema & routes
 async function setupServer() {
     for (const schema of [...userSchemas]) {
         server.addSchema(schema);
@@ -171,6 +179,7 @@ async function setupServer() {
     server.register(tournamentRoutes, { prefix: "/api/v1/tournaments" });
     server.register(contestantRoute, { prefix: "/api/v1/contestants" });
     server.register(eventRoute, { prefix: "/api/v1/events" });
+    server.register(webRoute, { prefix: "/api/v1/web" });
 
     await server.ready();
 }
