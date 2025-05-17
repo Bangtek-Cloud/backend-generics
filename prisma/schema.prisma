@@ -30,14 +30,105 @@ model User {
   contestants Contestant[]
 }
 
-model Product {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Session {
+  id          String   @id @default(cuid())
+  uid         String   @unique
+  mail        String    @default("")
+  name        String    @default("")
+  token       String
+  refresh     String
 }
 
+// Accountant
 
+model Account {
+  id          Int           @id @default(autoincrement())
+  code        String        @unique
+  name        String
+  type        AccountType
+
+  journals    Journal[]
+}
+
+model Transaction {
+  id          Int       @id @default(autoincrement())
+  date        DateTime
+  description String
+
+  eventId     String
+  event       Event     @relation(fields: [eventId], references: [id])
+
+  journal     Journal[]
+}
+
+model Journal {
+  id            Int     @id @default(autoincrement())
+  transactionId Int
+  accountId     Int
+  debit         Int     @default(0)
+  credit        Int     @default(0)
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  account       Account     @relation(fields: [accountId], references: [id])
+}
+
+model Asset {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  name        String
+  category    String
+  location    String
+  acquiredAt  DateTime
+  value       Int
+  condition   String
+  status      String
+  pic         String?
+  notes       String?
+
+  eventId     String
+  event       Event     @relation(fields: [eventId], references: [id])
+
+  ledgerEntries AssetLedger[]
+}
+
+model AssetLedger {
+  id        Int      @id @default(autoincrement())
+  assetId   Int
+  date      DateTime
+  action    String
+  value     Int?
+  location  String?
+  pic       String?
+  notes     String?
+
+  asset     Asset    @relation(fields: [assetId], references: [id])
+}
+
+// Donors
+model Donor {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  notes     String?
+
+  donations Donation[]
+}
+
+model Donation {
+  id          Int       @id @default(autoincrement())
+  donorId     Int
+  eventId     String
+  amount      Int
+  date        DateTime  @default(now())
+  notes       String?
+
+  donor       Donor     @relation(fields: [donorId], references: [id])
+  event       Event     @relation(fields: [eventId], references: [id])
+}
+
+// Event
 
 model Event {
   id            String           @id @default(cuid())
@@ -56,6 +147,11 @@ model Event {
 
   tournaments Tournaments[]
   sponsorWeb  SponsorInWeb[]
+
+  // Relasi
+  assets        Asset[]
+  transactions  Transaction[]
+  donation      Donation[]
 }
 
 model SponsorInWeb {
@@ -178,4 +274,12 @@ enum TournamentStatus {
   UPCOMING
   ONGOING
   COMPLETED
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
 }
