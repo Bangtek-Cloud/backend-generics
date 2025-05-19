@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Session" ADD COLUMN     "mail" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "name" TEXT NOT NULL DEFAULT '';

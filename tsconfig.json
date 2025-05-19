@@ -10,6 +10,11 @@
     "resolveJsonModule": true,
     "baseUrl": "./",
     "skipDefaultLibCheck": true,
+    "paths": {
+  
+      "src/*": ["./src/*"]
+  
+    },
   },
   "include": ["src/**/*.ts", "types.d.ts"], // Pastikan `src` juga masuk jika file ada di dalamnya
   "exclude": ["node_modules"]
