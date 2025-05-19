@@ -3,7 +3,7 @@ import { SessionController } from "./session.controller";
 
 export class SessionRoutes {
     static register(fastify: FastifyInstance) {
-        fastify.get("/", SessionController.getAll);
-        fastify.delete("/:id", SessionController.removeSession)
+        fastify.get("/", {preHandler: [fastify.authenticate, fastify.authorize(["ADMIN", "SU"])]}, SessionController.getAll);
+        fastify.delete("/:id",{preHandler: [fastify.authenticate, fastify.authorize(["ADMIN", "SU"])]}, SessionController.removeSession)
     }
 }

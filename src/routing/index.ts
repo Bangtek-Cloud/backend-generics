@@ -2,12 +2,10 @@ import { FastifyInstance } from "fastify";
 import userRoutes from  "../modules/v1/user/user.route";
 import tournamentRoutes from "../modules/v1/tournaments/tournaments.route";
 import contestantRoute from "../modules/v1/contestant/contestant.route";
-import eventRoute from "../modules/v1/event/event.route";
-import webRoute from "../modules/v1/web/web.route";
-import { SessionRoutes } from "../modules/v1/session/session.route";
-import { TransactionRoute } from "../modules/v1/transaction/transaction.routes";
-import { AssetRoute } from "../modules/v1/asset/asset.route";
-import { DonorRoutes } from "src/modules/v1/donor/donor.route";
+import eventRoute from "src/modules/v1/event/event.route";
+import webRoute from "src/modules/v1/web/web.route";
+import { SessionRoutes } from "src/modules/v1/session/session.route";
+import { AccountRoute } from "src/modules/v1/account/account.route";
 
 export class AppRoutes {
     static register(fastify: FastifyInstance) {
@@ -19,8 +17,6 @@ export class AppRoutes {
         fastify.register(webRoute, { prefix: "/api/v1/web" });
         // New route
         fastify.register((app) => SessionRoutes.register(app), {prefix: '/api/v1/session'})
-        fastify.register((app) => TransactionRoute.register(app), {prefix: '/api/v1/transaction'})
-        fastify.register((app) => AssetRoute.register(app), {prefix: '/api/v1/asset'})
-        fastify.register((app) => DonorRoutes.register(app), {prefix: '/api/v1/donor'})
+        fastify.register((app) => AccountRoute.register(app), {prefix: '/api/v1/account'})
     }
 }
