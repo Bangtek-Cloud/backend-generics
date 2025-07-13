@@ -6,6 +6,7 @@ import { server } from "../../../server";
 import { JWTPayload } from "src/types";
 import { createMinioClient } from "../../../utils/minio";
 import { Role } from "@prisma/client";
+import { SessionServices } from "../session/session.service";
 
 // User Config
 export async function registerHandler(request: FastifyRequest<{ Body: CreateUserInput }>, reply: FastifyReply) {
@@ -26,13 +27,15 @@ export async function registerHandler(request: FastifyRequest<{ Body: CreateUser
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
 
-            await server.redis.del(`loginAccess:${user.id}`);
+            await SessionServices.delete(user.id)
 
-            const tokenizer = JSON.stringify({
-                accessToken,
-                refreshToken,
+            await SessionServices.createOrUpdate({
+                uid: user.id,
+                token: accessToken,
+                refresh: refreshToken,
+                mail: user.email,
+                name: user.name
             })
-            await server.redis.setex(`loginAccess:${user.id}`, 86400, tokenizer);
             return reply.send({ accessToken, refreshToken });
         }
     } catch (error) {
@@ -66,17 +69,15 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
             }
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
-            await server.redis.ping();
 
-            await server.redis.del(`loginAccess:${user.id}`);
-            console.info(`Successfully deleted previous token for user ${user.id}`);
-
-            const tokenizer = JSON.stringify({
-                accessToken,
-                refreshToken,
+           await SessionServices.delete(user.id)
+            await SessionServices.createOrUpdate({
+                uid: user.id,
+                token: accessToken,
+                refresh: refreshToken,
+                mail: user.email,
+                name: user.name
             })
-            await server.redis.setex(`loginAccess:${user.id}`, 259200, tokenizer);
-            console.info(`Successfully stored new token for user ${user.id}`);
 
             return reply.send({ accessToken, refreshToken });
         }
@@ -156,16 +157,17 @@ export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInpu
         if (!decoded) {
             return reply.status(500).send({ message: "Terjadi kesalahan code 11" })
         }
-        const redisAccessToken = await server.redis.get(`loginAccess:${decoded.id}`);
+        // const redisAccessToken = await server.redis.get(`loginAccess:${decoded.id}`);
+        const accessStore = await SessionServices.findByUid(decoded.id)
 
-        if (!redisAccessToken) {
+        if (!accessStore) {
             return reply.code(440).send({
                 code: 440,
                 error: "Akses ditolak. Token tidak ditemukan di server.",
             });
         }
-        const redisParse = JSON.parse(redisAccessToken);
-        if (refresh !== redisParse.refreshToken) {
+        // const redisParse = JSON.parse(redisAccessToken);
+        if (refresh !== accessStore.refresh) {
             return reply.status(440).send({ message: "Sesi sudah berakhir, silahkan login ulang" })
         }
         const user = await findUser(decoded.id)
@@ -179,13 +181,14 @@ export async function refreshHandler(request: FastifyRequest<{ Body: RefreshInpu
         const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
         const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
 
-        await server.redis.del(`loginAccess:${user.id}`);
-
-        const tokenizer = JSON.stringify({
-            accessToken,
-            refreshToken,
+        await SessionServices.delete(user.id)
+        await SessionServices.createOrUpdate({
+            uid: user.id,
+            token: accessToken,
+            refresh: refreshToken,
+            mail: user.email,
+            name: user.name
         })
-        await server.redis.setex(`loginAccess:${user.id}`, 86400, tokenizer);
 
         return reply.send({ accessToken, refreshToken });
 
