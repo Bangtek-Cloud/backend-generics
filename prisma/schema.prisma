@@ -21,7 +21,7 @@ model User {
   password    String
   avatar      String?
   avatarFile  Bytes?
-  usingAvatar Boolean @default(false)
+  usingAvatar Boolean  @default(false)
   salt        String
   role        Role     @default(USER)
   createdAt   DateTime @default(now())
@@ -31,43 +31,46 @@ model User {
 }
 
 model Session {
-  id          String   @id @default(cuid())
-  uid         String   @unique
-  mail        String    @default("")
-  name        String    @default("")
-  token       String
-  refresh     String
+  id      String @id @default(cuid())
+  uid     String @unique
+  mail    String @default("")
+  name    String @default("")
+  token   String
+  refresh String
 }
 
 // Event
 
 model Event {
-  id            String           @id @default(cuid())
-  name          String
-  description   String
-  rules         Json
-  startDate     DateTime
-  endDate       DateTime?
-  logo          Bytes?
-  eventLogoUrl  String?
-  location      String?
-  isActive      Boolean          @default(true)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  showInWeb     Boolean          @default(false)
+  id           String    @id @default(cuid())
+  name         String
+  description  String
+  rules        Json
+  startDate    DateTime
+  endDate      DateTime?
+  logo         Bytes?
+  eventLogoUrl String?
+  location     String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  showInWeb    Boolean   @default(false)
 
-  tournaments Tournaments[]
-  sponsorWeb  SponsorInWeb[]
-  alatServices  AlatService[]
-  account       Account[]
+  tournaments  Tournaments[]
+  sponsorWeb   SponsorInWeb[]
+  alatServices AlatService[]
+  account      Account[]
+
+  bankId String?
+  bank   Bank?   @relation(fields: [bankId], references: [id])
 }
 
 model SponsorInWeb {
-  id            String           @id @default(cuid())
-  name          String
+  id   String @id @default(cuid())
+  name String
 
-  eventId   String
-  event     Event?   @relation(fields: [eventId], references: [id])
+  eventId String
+  event   Event? @relation(fields: [eventId], references: [id])
 }
 
 model Tournaments {
@@ -123,11 +126,11 @@ model Contestant {
 }
 
 model WebsiteView {
-  id String @id @default(cuid())
-  show Boolean @default(false)
-  order Int
-  type Int
-  content Json
+  id        String   @id @default(cuid())
+  show      Boolean  @default(false)
+  order     Int
+  type      Int
+  content   Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -136,9 +139,9 @@ model WebsiteView {
 }
 
 model WebsiteRoute {
-  id String @id @default(cuid())
-  path String @default("")
-  url String @unique
+  id        String   @id @default(cuid())
+  path      String   @default("")
+  url       String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -147,40 +150,50 @@ model WebsiteRoute {
 
 // Accountant
 model Account {
-  id String @id @default(cuid())
-  detail  String
+  id     String          @id @default(cuid())
+  detail String
   amount Int
-  date  DateTime @default(now())
-  status  CreditDebitType
-  note    String
+  date   DateTime        @default(now())
+  status CreditDebitType
+  note   String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  eventId     String
-  event       Event @relation(fields: [eventId], references: [id])
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id])
 }
 
 model AlatService {
-  id          String @id @default(cuid())
-  sku         Int
-  name        String
-  brand       String
-  uom         String
-  qtyFirst    Int
-  amountFirst Int
-  qtyLast     Int?
-  amountLast  Int?
-  qtySell     Int?
-  amountSell  Int?
-  stock       Int?
-  sellingStock  Int?
+  id           String @id @default(cuid())
+  sku          Int
+  name         String
+  brand        String
+  uom          String
+  qtyFirst     Int
+  amountFirst  Int
+  qtyLast      Int?
+  amountLast   Int?
+  qtySell      Int?
+  amountSell   Int?
+  stock        Int?
+  sellingStock Int?
 
-  eventId     String
-  event       Event @relation(fields: [eventId], references: [id])
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id])
 }
 
-enum CreditDebitType  {
+model Bank {
+  id       String @id @default(cuid())
+  BankName String
+  BankType String
+  BankNo   String
+  noHp     String
+
+  events Event[] // optional, if you want reverse relation
+}
+
+enum CreditDebitType {
   CREDIT
   DEBIT
 }
