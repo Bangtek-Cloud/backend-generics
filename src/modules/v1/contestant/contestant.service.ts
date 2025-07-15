@@ -139,7 +139,25 @@ export class ContestantService {
                     equipmentOwned: true,
                     shirtSize: true,
                     storeAddress: true,
-                    tournament: true,
+                    tournament: {
+                        select: {
+                            price: true,
+                            usingLogoPrice: true,
+                            event: { // Include the related Event
+                                select: {
+                                    bank: { // Include the related Bank
+                                        select: {
+                                            id: true,
+                                            BankName: true,
+                                            BankType: true,
+                                            BankNo: true,
+                                            noHp: true,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
                     optionPrice: true,
                     phoneNo: true,
                     contestantType: true,
