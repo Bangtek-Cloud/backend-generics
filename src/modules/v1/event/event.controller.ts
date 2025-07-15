@@ -30,7 +30,7 @@ export async function createEventHandler(request: FastifyRequest, reply: Fastify
       }
     }
 
-    const { name, description, startDate, endDate, location, isActive, rules } = eventData;
+    const { name, description, startDate, endDate, location, isActive, rules, bankId } = eventData;
     if (!name || !description || !startDate || !endDate) {
       return reply.status(400).send({
         success: false,
@@ -61,6 +61,7 @@ export async function createEventHandler(request: FastifyRequest, reply: Fastify
       eventLogoUrl: logoUrl,
       location,
       isActive: isActive === 'true',
+      bankId,
       rules,
     });
 
@@ -120,7 +121,7 @@ export async function updateEventHandler(request: FastifyRequest, reply: Fastify
         eventLogoUrl: logoUrl,
         startDate: eventData.startDate ? new Date(eventData.startDate) : existingEvent.startDate,
         endDate: eventData.endDate ? new Date(eventData.endDate) : existingEvent.endDate,
-        isActive: eventData.isActive === "true",
+        isActive: eventData.isActive === "true"
       });
   
       if (!updatedEvent) {

@@ -7,7 +7,7 @@ export class EventService {
         description?: string;
         startDate: Date;
         endDate: Date;
-        // logo?: Buffer;
+        bankId: string
         eventLogoUrl: string; 
         location?: string;
         isActive?: boolean;
@@ -23,7 +23,7 @@ export class EventService {
                     location: data.location || undefined,
                     isActive: data.isActive ?? true,
                     eventLogoUrl: data.eventLogoUrl ?? "",
-                    // logo: data.logo || undefined,
+                    bankId: data.bankId || undefined,
                     rules: data.rules || undefined,
                 },
             });
@@ -83,6 +83,7 @@ export class EventService {
         location?: string;
         isActive?: boolean;
         rules?: string;
+        bankId?: string
     }>): Promise<Event> {
         console.log(data)
         try {
@@ -97,9 +98,9 @@ export class EventService {
                     isActive: data.isActive,
                     eventLogoUrl: data.eventLogoUrl ?? "",
                     rules: data.rules || undefined,
+                    bankId: data.bankId || undefined,
                 },
             });
-            console.log('Updated Event:', updatedEvent);
             return {
                 ...updatedEvent,
                 logo: updatedEvent.logo
