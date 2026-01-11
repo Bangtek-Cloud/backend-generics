@@ -1,5 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { createTournament, deleteTournament, getAllPendingTournaments, getAllTournamentByUserId, getAllTournaments, getTournamentById, updateTournament } from "./tournaments.service";
+import { Role } from "@prisma/client";
 
 export async function addNewTournamentHandler(request: FastifyRequest, reply: FastifyReply) {
     const {
@@ -33,7 +34,7 @@ export async function addNewTournamentHandler(request: FastifyRequest, reply: Fa
             eventId,
             disabled
         }
-        if(!eventId){
+        if (!eventId) {
             return reply.status(400).send({
                 code: 400,
                 message: "Masukan eventId",
@@ -60,12 +61,52 @@ export async function addNewTournamentHandler(request: FastifyRequest, reply: Fa
 
 }
 
-export async function getAllTournamentsHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getAllTournamentsHandler(request: FastifyRequest<{
+    Querystring: {
+        page?: string;
+        limit?: number;
+        search?: string;
+        status?: "active" | "disable" | "all";
+    }
+}>, reply: FastifyReply) {
+    const { role } = request.user.publicMeta;
+    const {
+        page = 1,
+        limit = 10,
+        search = "",
+        status = "all",
+    } = request.query;
     try {
-        const tournaments = await getAllTournaments();
+        const result = await getAllTournaments({
+            role: role as Role,
+            page: Number(page),
+            limit: Number(limit),
+            search,
+            status,
+        });
+        const mappingData = result.data.map((item) => ({
+            id: item.id,
+            name: item?.name,
+            rules: item?.rules,
+            participan: item.contestants.length,
+            maxParticipan: item.maxParticipants,
+            status: item.status,
+            start: item.startDate,
+            end: item.endDate,
+            desciption: item.description,
+            isActive: !item.disabled,
+            prize: item.prize,
+            image: item.event.eventLogoUrl
+                ? process.env.S3_URL + item.event.eventLogoUrl
+                : null,
+            eventName: item?.event?.name,
+            location: item?.event?.location
+        }))
         return reply.status(200).send({
-            code: 200,
-            data: tournaments,
+            success: true,
+            error: false,
+            data: mappingData,
+            meta: result.meta,
         })
     } catch (error) {
         console.log(error);

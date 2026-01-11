@@ -1,5 +1,12 @@
-import { Event } from "@prisma/client";
+import { Event, Role } from "@prisma/client";
 import prisma from "../../../utils/prisma";
+
+type GetAllEventsParams = {
+    role: Role;
+    page: number;
+    limit: number;
+    search?: string
+};
 
 export class EventService {
     static async createEvent(data: {
@@ -8,7 +15,7 @@ export class EventService {
         startDate: Date;
         endDate: Date;
         bankId: string
-        eventLogoUrl: string; 
+        eventLogoUrl: string;
         location?: string;
         isActive?: boolean;
         rules?: string;
@@ -37,20 +44,50 @@ export class EventService {
         }
     }
 
-    static async getAllEvents(): Promise<Event[]> {
-        try {
-            const events = await prisma.event.findMany({
-                orderBy: [{ startDate: "asc" }],
-            });
+    static async getAllEvents(params: GetAllEventsParams) {
+        const { role, page, limit, search } = params;
 
-            return events.map((event) => ({
-                ...event,
-                rules: JSON.parse(typeof event.rules === "string" ? event.rules : "[]"),
-                logo: false,
-            })) as unknown as Event[];
-        } catch (error) {
-            throw new Error(`Gagal mendapatkan semua event: ${error.message}`);
+        const skip = (page - 1) * limit;
+
+        const where: any = {};
+        
+        if (role !== "ADMIN" && role !== "SU") {
+            where.isActive = true;
         }
+        
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: "insensitive" } },
+                { description: { contains: search, mode: "insensitive" } },
+                { location: { contains: search, mode: "insensitive" } },
+            ];
+        }
+
+        const [total, events] = await prisma.$transaction([
+            prisma.event.count({ where }),
+            prisma.event.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { startDate: "desc" },
+            }),
+        ]);
+
+        return {
+            data: events.map(event => ({
+                ...event,
+                rules: JSON.parse(
+                    typeof event.rules === "string" ? event.rules : "[]"
+                ),
+                logo: false,
+            })),
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
 
     static async getEventById(eventId: string): Promise<Event | null> {
@@ -85,7 +122,6 @@ export class EventService {
         rules?: string;
         bankId?: string
     }>): Promise<Event> {
-        console.log(data)
         try {
             const updatedEvent = await prisma.event.update({
                 where: { id: eventId },
