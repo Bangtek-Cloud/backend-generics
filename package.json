@@ -23,7 +23,7 @@
     "@fastify/jwt": "^9.1.0",
     "@fastify/multipart": "^9.0.3",
     "@fastify/redis": "^7.0.2",
-    "@prisma/client": "^6.5.0",
+    "@prisma/client": "6.5.0",
     "@types/fastify-jwt": "^0.8.3",
     "@vercel/node": "^5.1.14",
     "fastify": "^5.2.1",
@@ -31,7 +31,7 @@
     "fastify-zod": "^1.4.0",
     "ioredis": "^5.6.0",
     "minio": "^8.0.5",
-    "prisma": "^6.5.0",
+    "prisma": "6.5.0",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.5"
   },

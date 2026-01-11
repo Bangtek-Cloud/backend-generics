@@ -8,7 +8,7 @@ RUN npm install --global bun
 
 COPY . .
 
-RUN bunx prisma generate
+RUN bunx prisma@6.5.0 generate
 
 EXPOSE 3000
 
