@@ -40,6 +40,7 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     environment: beta
+    timeout-minutes: 15
     steps:
       - name: Deploy with Docker
         uses: appleboy/ssh-action@v0.1.10
