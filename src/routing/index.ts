@@ -7,6 +7,7 @@ import webRoute from "src/modules/v1/web/web.route";
 import { SessionRoutes } from "src/modules/v1/session/session.route";
 import { AccountRoute } from "src/modules/v1/account/account.route";
 import { BankRoute } from "src/modules/v1/bank/bank.route";
+import { GalleryRoutes } from "src/modules/v1/gallery/route";
 
 export class AppRoutes {
     static register(fastify: FastifyInstance) {
@@ -20,5 +21,6 @@ export class AppRoutes {
         fastify.register((app) => SessionRoutes.register(app), {prefix: '/api/v1/session'})
         fastify.register((app) => AccountRoute.register(app), {prefix: '/api/v1/account'})
         fastify.register((app) => BankRoute.register(app), {prefix: '/api/v1/bank'})
+        fastify.register((app) => GalleryRoutes.register(app), {prefix: '/api/v1/gallery'})
     }
 }

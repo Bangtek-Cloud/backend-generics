@@ -65,6 +65,52 @@ model Event {
   bank   Bank?   @relation(fields: [bankId], references: [id])
 }
 
+model Gallery {
+  id String @id @default(cuid())
+  image String
+  caption String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Clip {
+  id String @id @default(cuid())
+  url String
+  caption String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Hero {
+  id String @id @default(cuid())
+  title String
+  description String?
+  subTitle String?
+  image String?
+  buttonText String?
+  buttonLink String?
+}
+
+model Article {
+  id String @id @default(cuid())
+  title String
+  excerpt String?
+  content String
+  image String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
+  updatedBy String
+  published Boolean @default(false)
+}
+
+model SocialMedia {
+  id String @id @default(cuid())
+  name String
+  url String
+  icon String
+}
+
 model SponsorInWeb {
   id   String @id @default(cuid())
   name String
@@ -202,6 +248,7 @@ enum Role {
   USER
   ADMIN
   STAKEHOLDER
+  EDITOR
   SU
 }
 
