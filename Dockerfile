@@ -14,7 +14,7 @@ RUN bun install
 COPY . .
 
 # generate prisma client
-RUN bunx prisma@6.9.0 generate
+RUN bunx prisma@6.5.0 generate
 
 # build typescript
 RUN bun run build

@@ -242,11 +242,25 @@ export async function updatePasswordHandler(request: FastifyRequest, reply: Fast
     }
 }
 
-// Admin Config
-export async function getAllHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getAllHandler(request: FastifyRequest<{
+    Querystring: {
+        page?: string;
+        limit?: number;
+        search?: string;
+    }
+}>, reply: FastifyReply) {
+    const {
+        page = 1,
+        limit = 10,
+        search = "",
+    } = request.query;
     try {
-        const response = await getAllUser()
-        const mapping = response.map(item => ({
+        const { data, meta } = await getAllUser({
+            page: Number(page),
+            limit: Number(limit),
+            search
+        })
+        const mapping = data.map(item => ({
             id: item.id,
             name: item.name,
             email: item.email,
@@ -255,7 +269,7 @@ export async function getAllHandler(request: FastifyRequest, reply: FastifyReply
             updatedAt: item.updatedAt
         })
         )
-        return reply.status(200).send({ success: true, data: mapping });
+        return reply.status(200).send({ success: true, data: mapping, meta });
     } catch (e) {
         console.error(e)
         return reply.status(500).send({ error: "Terjadi kesalahan", success: false })

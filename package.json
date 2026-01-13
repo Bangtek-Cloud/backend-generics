@@ -10,9 +10,9 @@
     "tsconfig-paths": "^4.2.0"
   },
   "scripts": {
-    "start": "node ./dist/server.js",
-    "dev": "tsnd --respawn --transpile-only --exit-child -r tsconfig-paths/register src/main.ts",
-    "build": "rm -rf dist && tsc -p tsconfig.json && tsc-alias -p tsconfig.json"
+    "start": "bunx prisma migrate deploy && node ./dist/server.js",
+    "build": "rm -rf dist && tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "dev": "tsnd --respawn --transpile-only --exit-child -r tsconfig-paths/register src/main.ts"
   },
   "peerDependencies": {
     "typescript": "^5.8.2"
