@@ -2,10 +2,10 @@ import { Event, Role } from "@prisma/client";
 import prisma from "../../../utils/prisma";
 
 type GetAllEventsParams = {
-    role: Role;
     page: number;
     limit: number;
     search?: string
+    isActive: string
 };
 
 export class EventService {
@@ -45,16 +45,19 @@ export class EventService {
     }
 
     static async getAllEvents(params: GetAllEventsParams) {
-        const { role, page, limit, search } = params;
+        const { page, limit, search, isActive } = params;
 
         const skip = (page - 1) * limit;
 
         const where: any = {};
-        
-        if (role !== "ADMIN" && role !== "SU") {
-            where.isActive = true;
+
+        if (isActive === "active") {
+            where.isActive = true
         }
-        
+        if (isActive === "disable") {
+            where.isActive = false
+        }
+
         if (search) {
             where.OR = [
                 { name: { contains: search, mode: "insensitive" } },
@@ -70,16 +73,28 @@ export class EventService {
                 skip,
                 take: limit,
                 orderBy: { startDate: "desc" },
+                include: {
+                    tournaments: true
+                }
             }),
         ]);
 
         return {
             data: events.map(event => ({
-                ...event,
+                id: event.id,
+                name: event.name,
+                description: event.description,
+                startDate: event.startDate,
+                endDate: event.endDate,
+                location: event.location,
+                isActive: event.isActive,
+                eventLogoUrl: event.eventLogoUrl,
+                createdAt: event.createdAt,
+                updatedAt: event.updatedAt,
+                tournament: event.tournaments.length,
                 rules: JSON.parse(
                     typeof event.rules === "string" ? event.rules : "[]"
                 ),
-                logo: false,
             })),
             meta: {
                 page,

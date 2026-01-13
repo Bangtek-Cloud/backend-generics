@@ -7,6 +7,7 @@ type GetAllEventsParams = {
   limit: number;
   search?: string;
   status?: "active" | "disable" | "all";
+  eventId?: string;
 };
 
 export async function createTournament(data: any) {
@@ -21,7 +22,8 @@ export async function getAllTournaments(params: GetAllEventsParams) {
     role,
     page = 1,
     limit = 10,
-    search
+    search,
+    eventId
   } = params;
 
   const skip = (page - 1) * limit;
@@ -31,6 +33,9 @@ export async function getAllTournaments(params: GetAllEventsParams) {
     where.event = { isActive: true };
   }
 
+  if (eventId) {
+    where.eventId = eventId
+  }
   if (search) {
     where.OR = [
       {

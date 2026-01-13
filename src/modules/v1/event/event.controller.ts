@@ -161,22 +161,21 @@ export async function getAllEventsHandler(request: FastifyRequest<{
     page?: string;
     limit?: number;
     search?: string;
-    status?: "active" | "disable" | "all";
+    isActive?: "active" | "disable" | "all";
   }
 }>, reply: FastifyReply) {
-  const { role } = request.user.publicMeta;
   const {
     page = 1,
     limit = 10,
     search = "",
-    status = "all",
+    isActive = "",
   } = request.query;
   try {
     const result = await EventService.getAllEvents({
-      role: role as Role,
       page: Number(page),
       limit: Number(limit),
-      search
+      search,
+      isActive
     });
     const mappedEvents = result.data.map(event => ({
       ...event,

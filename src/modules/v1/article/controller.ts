@@ -104,13 +104,13 @@ export class ArticleController {
                 : null,
             createdBy: {
                 name: item.createdBy.name,
-                avatar: item.createdBy.avatar
-                    ? process.env.S3_URL + item.createdBy.avatar : null
+                avatar: item.createdBy.usingAvatar
+                    ? process.env.S3_URL + item.createdBy.avatar : item.createdBy.avatar
             },
             updatedBy: {
                 name: item.updatedBy.name,
-                avatar: item.updatedBy.avatar
-                    ? process.env.S3_URL + item.updatedBy.avatar : ""
+                avatar: item.updatedBy.usingAvatar
+                    ? process.env.S3_URL + item.updatedBy.avatar : item.createdBy.avatar
             },
         }));
 

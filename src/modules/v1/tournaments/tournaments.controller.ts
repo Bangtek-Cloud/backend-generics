@@ -66,6 +66,7 @@ export async function getAllTournamentsHandler(request: FastifyRequest<{
         page?: string;
         limit?: number;
         search?: string;
+        eventId?: string;
         status?: "active" | "disable" | "all";
     }
 }>, reply: FastifyReply) {
@@ -74,6 +75,7 @@ export async function getAllTournamentsHandler(request: FastifyRequest<{
         page = 1,
         limit = 10,
         search = "",
+        eventId = "",
         status = "all",
     } = request.query;
     try {
@@ -83,6 +85,66 @@ export async function getAllTournamentsHandler(request: FastifyRequest<{
             limit: Number(limit),
             search,
             status,
+            eventId
+        });
+        const mappingData = result.data.map((item) => ({
+            id: item.id,
+            name: item?.name,
+            rules: item?.rules,
+            participan: item.contestants.length,
+            maxParticipan: item.maxParticipants,
+            status: item.status,
+            start: item.startDate,
+            end: item.endDate,
+            desciption: item.description,
+            isActive: !item.disabled,
+            prize: item.prize,
+            image: item.event.eventLogoUrl
+                ? process.env.S3_URL + item.event.eventLogoUrl
+                : null,
+            eventName: item?.event?.name,
+            location: item?.event?.location
+        }))
+        return reply.status(200).send({
+            success: true,
+            error: false,
+            data: mappingData,
+            meta: result.meta,
+        })
+    } catch (error) {
+        console.log(error);
+        return reply.status(500).send({
+            code: 500,
+            message: "Internal server error",
+        })
+    }
+}
+
+
+export async function getAllTournamentsHandlers(request: FastifyRequest<{
+    Querystring: {
+        page?: string;
+        limit?: number;
+        search?: string;
+        eventId?: string;
+        status?: "active" | "disable" | "all";
+    }
+}>, reply: FastifyReply) {
+    const {
+        page = 1,
+        limit = 10,
+        search = "",
+        eventId = "",
+        status = "all",
+    } = request.query;
+    try {
+        const result = await getAllTournaments({
+            role: "USER",
+            page: Number(page),
+            limit: Number(limit),
+            search,
+            status,
+            eventId
         });
         const mappingData = result.data.map((item) => ({
             id: item.id,
