@@ -156,7 +156,7 @@ export class ArticleController {
                 ...data,
                 image: data.image
                     ? process.env.S3_URL + data.image
-                    : null,
+                    : data.image,
             },
         });
     }

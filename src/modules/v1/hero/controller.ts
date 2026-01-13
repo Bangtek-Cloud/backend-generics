@@ -2,7 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { uploadFileToMinio } from "src/utils/minio-upload";
 import { HeroService } from "./service";
 
-const BUCKET_NAME = "hero-image";
+const BUCKET_NAME = "event-logo";
 
 export class HeroController {
     static async get(
