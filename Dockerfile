@@ -1,27 +1,29 @@
 # =========================
-# 1️⃣ Builder stage
+# 1️⃣ Builder
 # =========================
-FROM node:20-alpine AS builder
+FROM oven/bun:1.3.5 AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+# copy lockfile + manifest dulu (biar cache efisien)
+COPY package.json bun.lockb ./
 
-RUN npm install -g bun
+RUN bun install --frozen-lockfile
 
-RUN bun install
-
+# copy source
 COPY . .
 
-RUN bunx prisma@6.5.0 generate
+# generate prisma client
+RUN bunx prisma@6.9.0 generate
 
+# build typescript
 RUN bun run build
 
 
 # =========================
-# 2️⃣ Runtime stage (kecil)
+# 2️⃣ Runtime (kecil)
 # =========================
-FROM node:20-alpine
+FROM oven/bun:1.3.5-slim
 
 WORKDIR /app
 
@@ -36,4 +38,4 @@ ENV ADDRESS=0.0.0.0
 
 EXPOSE 3000
 
-CMD ["node", "dist/server.js"]
+CMD ["bun", "start"]
