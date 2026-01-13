@@ -6,9 +6,9 @@ FROM oven/bun:1.3.5 AS builder
 WORKDIR /app
 
 # copy lockfile + manifest dulu (biar cache efisien)
-COPY package.json bun.lockb ./
+COPY package.json ./
 
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # copy source
 COPY . .
