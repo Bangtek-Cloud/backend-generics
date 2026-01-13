@@ -1,21 +1,27 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "module": "CommonJS",
-    "strict": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "types": ["@fastify/jwt", "node"], // Tambahkan ini
-    "resolveJsonModule": true,
-    "baseUrl": "./",
-    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
     "paths": {
-  
-      "src/*": ["./src/*"]
-  
+      "src/*": [
+        "src/*"
+      ]
     },
+    "allowJs": true,
+    "target": "es2016",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noImplicitAny": false,
+    "strict": false
   },
-  "include": ["src/**/*.ts", "types.d.ts"], // Pastikan `src` juga masuk jika file ada di dalamnya
-  "exclude": ["node_modules"]
+  "include": [
+    "src/**/*.ts",
+    "types.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

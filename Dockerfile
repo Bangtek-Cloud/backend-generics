@@ -1,17 +1,37 @@
+# =========================
+# 1️⃣ Builder stage
+# =========================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+
+RUN npm install
+
+COPY . .
+
+RUN npx prisma generate
+
+RUN npm run build
+
+
+# =========================
+# 2️⃣ Runtime stage (kecil)
+# =========================
 FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY package.json ./
 
-RUN npm install --global bun
-
-COPY . .
-
-RUN bunx prisma@6.5.0 generate
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV ADDRESS=0.0.0.0
 
 EXPOSE 3000
 
-ENV ADDRESS=0.0.0.0 PORT=3000
-
-CMD ["bun", "start:migrate:prod"]
+CMD ["node", "dist/server.js"]
