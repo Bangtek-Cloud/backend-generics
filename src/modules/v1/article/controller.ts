@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { uploadFileToMinio } from "src/utils/minio-upload";
 import { ArticleService } from "./service";
+import { uploadFileToMinio2 } from "src/utils/mini-upload2";
 
 const BUCKET_NAME = "event-logo";
 
@@ -10,24 +10,24 @@ export class ArticleController {
         reply: FastifyReply
     ) {
         try {
-            const parts = request.parts();
-
-            let imageBuffer: Buffer | undefined;
-            let imageName = "";
-
             let title = "";
             let excerpt: string | undefined;
             let content = "";
             let published = false;
+            let imagePath: string | undefined;
 
-            for await (const part of parts) {
+            for await (const part of request.parts()) {
                 if (part.type === "file") {
-                    const chunks: Buffer[] = [];
-                    for await (const chunk of part.file) {
-                        chunks.push(chunk);
-                    }
-                    imageBuffer = Buffer.concat(chunks);
-                    imageName = part.filename || "";
+                    const upload = await uploadFileToMinio2({
+                        server: request.server,
+                        bucket: BUCKET_NAME,
+                        stream: part.file,              // ✅ streaming
+                        originalName: part.filename,
+                        prefix: "article",
+                        contentType: part.mimetype,
+                    });
+
+                    imagePath = upload.objectPath;
                 } else {
                     if (part.fieldname === "title") title = String(part.value);
                     if (part.fieldname === "excerpt") excerpt = String(part.value);
@@ -45,23 +45,7 @@ export class ArticleController {
                 });
             }
 
-            let imagePath: string | undefined;
-
-            if (imageBuffer) {
-                const upload = await uploadFileToMinio({
-                    server: request.server,
-                    bucket: BUCKET_NAME,
-                    buffer: imageBuffer,
-                    originalName: imageName,
-                    prefix: "article",
-                });
-                imagePath = upload.objectPath;
-            }
-
             const userId = request.user.id;
-            console.log(userId, 'ISI USERID');
-            console.log('ISI USERRRR', JSON.stringify(request.user))
-
 
             const data = await ArticleService.create({
                 title,
@@ -165,71 +149,67 @@ export class ArticleController {
         request: FastifyRequest<{ Params: { id: string } }>,
         reply: FastifyReply
     ) {
-        const { id } = request.params;
-        const existing = await ArticleService.getById(id);
+        try {
+            const { id } = request.params;
 
-        if (!existing) {
-            return reply.status(404).send({
-                success: false,
-                message: "Article tidak ditemukan",
-            });
-        }
+            const existing = await ArticleService.getById(id);
+            if (!existing) {
+                return reply.status(404).send({
+                    success: false,
+                    message: "Article tidak ditemukan",
+                });
+            }
 
-        const parts = request.parts();
+            let title: string | undefined;
+            let excerpt: string | undefined;
+            let content: string | undefined;
+            let published: boolean | undefined;
+            let imagePath: string | undefined;
 
-        let imageBuffer: Buffer | undefined;
-        let imageName = "";
+            for await (const part of request.parts()) {
+                if (part.type === "file") {
+                    const upload = await uploadFileToMinio2({
+                        server: request.server,
+                        bucket: BUCKET_NAME,
+                        stream: part.file,            // ✅ STREAM
+                        originalName: part.filename,
+                        prefix: "article",
+                        contentType: part.mimetype,
+                    });
 
-        let title: string | undefined;
-        let excerpt: string | undefined;
-        let content: string | undefined;
-        let published: boolean | undefined;
-
-        for await (const part of parts) {
-            if (part.type === "file") {
-                const chunks: Buffer[] = [];
-                for await (const chunk of part.file) {
-                    chunks.push(chunk);
-                }
-                imageBuffer = Buffer.concat(chunks);
-                imageName = part.filename || "";
-            } else {
-                if (part.fieldname === "title") title = String(part.value);
-                if (part.fieldname === "excerpt") excerpt = String(part.value);
-                if (part.fieldname === "content") content = String(part.value);
-                if (part.fieldname === "published") {
-                    published = part.value === "true";
+                    imagePath = upload.objectPath;
+                } else {
+                    if (part.fieldname === "title") title = String(part.value);
+                    if (part.fieldname === "excerpt") excerpt = String(part.value);
+                    if (part.fieldname === "content") content = String(part.value);
+                    if (part.fieldname === "published") {
+                        published = part.value === "true";
+                    }
                 }
             }
-        }
 
-        let imagePath = existing.image;
-
-        if (imageBuffer) {
-            const upload = await uploadFileToMinio({
-                server: request.server,
-                bucket: BUCKET_NAME,
-                buffer: imageBuffer,
-                originalName: imageName,
-                prefix: "article",
+            const updated = await ArticleService.update(id, {
+                title,
+                excerpt,
+                content,
+                image: imagePath, // undefined = tidak diupdate
+                published,
+                updatedById: request.user.id,
             });
-            imagePath = upload.objectPath;
+
+            return reply.send({
+                success: true,
+                data: updated,
+            });
+        } catch (error: any) {
+            console.error(error);
+            return reply.status(500).send({
+                success: false,
+                message: error.message,
+            });
         }
-
-        const updated = await ArticleService.update(id, {
-            title,
-            excerpt,
-            content,
-            image: imagePath,
-            published,
-            updatedById: request.user.id,
-        });
-
-        return reply.send({
-            success: true,
-            data: updated,
-        });
     }
+
 
     static async delete(
         request: FastifyRequest<{ Params: { id: string } }>,
