@@ -7,6 +7,8 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 
+RUN npm install -g bun
+
 RUN npm install
 
 COPY . .
