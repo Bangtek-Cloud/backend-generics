@@ -27,7 +27,9 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  contestants Contestant[]
+  contestants     Contestant[]
+  createdArticles Article[]    @relation("ArticleAuthor")
+  updatedArticles Article[]    @relation("ArticleUpdater")
 }
 
 model Session {
@@ -66,48 +68,52 @@ model Event {
 }
 
 model Gallery {
-  id String @id @default(cuid())
-  image String
-  caption String?
+  id        String   @id @default(cuid())
+  image     String
+  caption   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Clip {
-  id String @id @default(cuid())
-  url String
-  caption String?
+  id        String   @id @default(cuid())
+  url       String
+  caption   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Hero {
-  id String @id @default(cuid())
-  title String
+  id          String  @id @default(cuid())
+  title       String
   description String?
-  subTitle String?
-  image String?
-  buttonText String?
-  buttonLink String?
+  subTitle    String?
+  image       String?
+  buttonText  String?
+  buttonLink  String?
 }
 
 model Article {
-  id String @id @default(cuid())
-  title String
-  excerpt String?
-  content String
-  image String?
+  id        String   @id @default(cuid())
+  title     String
+  excerpt   String?
+  content   String
+  image     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  createdBy String
-  updatedBy String
-  published Boolean @default(false)
+  published Boolean  @default(false)
+
+  createdById String
+  updatedById String
+
+  createdBy User @relation("ArticleAuthor", fields: [createdById], references: [id])
+  updatedBy User @relation("ArticleUpdater", fields: [updatedById], references: [id])
 }
 
 model SocialMedia {
-  id String @id @default(cuid())
+  id   String @id @default(cuid())
   name String
-  url String
+  url  String
   icon String
 }
 

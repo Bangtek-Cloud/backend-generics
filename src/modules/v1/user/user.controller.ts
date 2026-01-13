@@ -20,6 +20,7 @@ export async function registerHandler(request: FastifyRequest<{ Body: CreateUser
             const users = {
                 id: user.id,
                 email: user.email,
+                name: user.name,
                 publicMeta: {
                     role: user.role
                 }
@@ -63,6 +64,7 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
             const users = {
                 id: user.id,
                 email: user.email,
+                name: user.name,
                 publicMeta: {
                     role: user.role
                 }
