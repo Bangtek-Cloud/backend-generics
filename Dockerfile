@@ -9,13 +9,13 @@ COPY package.json package-lock.json* ./
 
 RUN npm install -g bun
 
-RUN npm install
+RUN bun install
 
 COPY . .
 
-RUN npx prisma generate
+RUN bunx prisma@6.5.0 generate
 
-RUN npm run build
+RUN bun run build
 
 
 # =========================
