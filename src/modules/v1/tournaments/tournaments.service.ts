@@ -151,7 +151,11 @@ export async function getTournamentById(id: string) {
   const contestantsWithLogo = tournament.contestants.map((contestant) => {
     return {
       ...contestant,
-      equipmentOwned: JSON.parse(typeof contestant.equipmentOwned === "string" ? contestant.equipmentOwned : "[]") ?? []
+      equipmentOwned: JSON.parse(typeof contestant.equipmentOwned === "string" ? contestant.equipmentOwned : "[]") ?? [],
+      user: {
+        ...contestant.user,
+        avatar: contestant.user.usingAvatar ? process.env.S3_URL + contestant.user.avatar : contestant.user.avatar
+      }
     };
   });
 

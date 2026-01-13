@@ -72,7 +72,7 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
             const accessToken = server.jwt.sign(users, { expiresIn: '1d' });
             const refreshToken = server.jwt.sign(users, { expiresIn: '7d' });
 
-           await SessionServices.delete(user.id)
+            await SessionServices.delete(user.id)
             await SessionServices.createOrUpdate({
                 uid: user.id,
                 token: accessToken,
@@ -94,7 +94,15 @@ export async function loginHandler(request: FastifyRequest<{ Body: LoginInput }>
 export async function meHandler(request: FastifyRequest, reply: FastifyReply) {
     const id = request.user.id;
     const [users] = await Promise.all([findUser(id)]);
-    return users;
+    const user = {
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        avatar: users.usingAvatar ? process.env.S3_URL + users.avatar : users.avatar,
+        role: users.role,
+        usingAvatar: users.usingAvatar
+    }
+    return user;
 }
 
 export async function updateHandler(request: FastifyRequest, reply: FastifyReply) {
@@ -238,7 +246,16 @@ export async function updatePasswordHandler(request: FastifyRequest, reply: Fast
 export async function getAllHandler(request: FastifyRequest, reply: FastifyReply) {
     try {
         const response = await getAllUser()
-        return reply.status(200).send({ success: true, data: response });
+        const mapping = response.map(item => ({
+            id: item.id,
+            name: item.name,
+            email: item.email,
+            role: item.role,
+            avatar: item.usingAvatar ? process.env.S3_URL + item.avatar : item.avatar,
+            updatedAt: item.updatedAt
+        })
+        )
+        return reply.status(200).send({ success: true, data: mapping });
     } catch (e) {
         console.error(e)
         return reply.status(500).send({ error: "Terjadi kesalahan", success: false })
