@@ -83,6 +83,10 @@ export class ArticleService {
     static async getById(id: string) {
         return prisma.article.findUnique({
             where: { id },
+            include: {
+                createdBy: true,
+                updatedBy: true,
+            },
         });
     }
 

@@ -137,10 +137,26 @@ export class ArticleController {
         return reply.send({
             success: true,
             data: {
-                ...data,
+                id: data.id,
+                title: data.title,
+                excerpt: data.excerpt,
+                content: data.content,
+                published: data.published,
+                createdAt: data.createdAt,
+                updatedAt: data.updatedAt,
                 image: data.image
                     ? process.env.S3_URL + data.image
-                    : data.image,
+                    : null,
+                createdBy: {
+                    name: data.createdBy.name,
+                    avatar: data.createdBy.usingAvatar
+                        ? process.env.S3_URL + data.createdBy.avatar : data.createdBy.avatar
+                },
+                updatedBy: {
+                    name: data.updatedBy.name,
+                    avatar: data.updatedBy.usingAvatar
+                        ? process.env.S3_URL + data.updatedBy.avatar : data.createdBy.avatar
+                },
             },
         });
     }
