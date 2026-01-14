@@ -3,9 +3,6 @@ import { createEventHandler, deleteEventHandler, getAllEventsHandler, getEventBy
 
 async function eventRoute(server: FastifyInstance) {
     server.get('/',
-        {
-            preHandler: [server.authenticate],
-        },
         getAllEventsHandler);
     server.get('/:id',
         {

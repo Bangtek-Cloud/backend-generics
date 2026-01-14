@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { addNewTournamentHandler, deleteTournamentHandler, getAllPendingTournamentsHandler, getAllTournamentByUserIdHandler, getAllTournamentsHandler, getTournamentByIdHandler, updateTournamentHandler, validatePriceHandler } from "./tournaments.controller";
+import { addNewTournamentHandler, deleteTournamentHandler, getAllPendingTournamentsHandler, getAllTournamentByUserIdHandler, getAllTournamentsHandler, getAllTournamentsHandlers, getTournamentByIdHandler, updateTournamentHandler, validatePriceHandler } from "./tournaments.controller";
 
 
 async function tournamentRoutes(server: FastifyInstance) {
@@ -12,6 +12,11 @@ async function tournamentRoutes(server: FastifyInstance) {
         "/",
         { preHandler: [server.authenticate] },
         getAllTournamentsHandler
+    );
+
+    server.get(
+        "/alls",
+        getAllTournamentsHandlers
     );
     server.get(
         "/:id",

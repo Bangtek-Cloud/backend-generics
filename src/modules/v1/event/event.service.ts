@@ -1,5 +1,12 @@
-import { Event } from "@prisma/client";
+import { Event, Role } from "@prisma/client";
 import prisma from "../../../utils/prisma";
+
+type GetAllEventsParams = {
+    page: number;
+    limit: number;
+    search?: string
+    isActive: string
+};
 
 export class EventService {
     static async createEvent(data: {
@@ -7,8 +14,8 @@ export class EventService {
         description?: string;
         startDate: Date;
         endDate: Date;
-        // logo?: Buffer;
-        eventLogoUrl: string; 
+        bankId: string
+        eventLogoUrl: string;
         location?: string;
         isActive?: boolean;
         rules?: string;
@@ -23,7 +30,7 @@ export class EventService {
                     location: data.location || undefined,
                     isActive: data.isActive ?? true,
                     eventLogoUrl: data.eventLogoUrl ?? "",
-                    // logo: data.logo || undefined,
+                    bankId: data.bankId || undefined,
                     rules: data.rules || undefined,
                 },
             });
@@ -37,20 +44,65 @@ export class EventService {
         }
     }
 
-    static async getAllEvents(): Promise<Event[]> {
-        try {
-            const events = await prisma.event.findMany({
-                orderBy: [{ startDate: "asc" }],
-            });
+    static async getAllEvents(params: GetAllEventsParams) {
+        const { page, limit, search, isActive } = params;
 
-            return events.map((event) => ({
-                ...event,
-                rules: JSON.parse(typeof event.rules === "string" ? event.rules : "[]"),
-                logo: false,
-            })) as unknown as Event[];
-        } catch (error) {
-            throw new Error(`Gagal mendapatkan semua event: ${error.message}`);
+        const skip = (page - 1) * limit;
+
+        const where: any = {};
+
+        if (isActive === "active") {
+            where.isActive = true
         }
+        if (isActive === "disable") {
+            where.isActive = false
+        }
+
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: "insensitive" } },
+                { description: { contains: search, mode: "insensitive" } },
+                { location: { contains: search, mode: "insensitive" } },
+            ];
+        }
+
+        const [total, events] = await prisma.$transaction([
+            prisma.event.count({ where }),
+            prisma.event.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { startDate: "desc" },
+                include: {
+                    tournaments: true
+                }
+            }),
+        ]);
+
+        return {
+            data: events.map(event => ({
+                id: event.id,
+                name: event.name,
+                description: event.description,
+                startDate: event.startDate,
+                endDate: event.endDate,
+                location: event.location,
+                isActive: event.isActive,
+                eventLogoUrl: event.eventLogoUrl,
+                createdAt: event.createdAt,
+                updatedAt: event.updatedAt,
+                tournament: event.tournaments.length,
+                rules: JSON.parse(
+                    typeof event.rules === "string" ? event.rules : "[]"
+                ),
+            })),
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
 
     static async getEventById(eventId: string): Promise<Event | null> {
@@ -83,8 +135,8 @@ export class EventService {
         location?: string;
         isActive?: boolean;
         rules?: string;
+        bankId?: string
     }>): Promise<Event> {
-        console.log(data)
         try {
             const updatedEvent = await prisma.event.update({
                 where: { id: eventId },
@@ -97,9 +149,9 @@ export class EventService {
                     isActive: data.isActive,
                     eventLogoUrl: data.eventLogoUrl ?? "",
                     rules: data.rules || undefined,
+                    bankId: data.bankId || undefined,
                 },
             });
-            console.log('Updated Event:', updatedEvent);
             return {
                 ...updatedEvent,
                 logo: updatedEvent.logo

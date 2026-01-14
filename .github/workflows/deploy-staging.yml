@@ -3,34 +3,45 @@ name: Deploy to beta server
 on:
   push:
     branches:
+      - development
       - beta-staging
 
+env:
+  IMAGE_NAME: btk-fastify-gen
+  REGISTRY: ghcr.io
+  GHCR_IMAGE: ghcr.io/thera-data-solution/btk-fastify-gen:latest
+
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-    environment: beta
+
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      - name: Checkout kode
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login ke Docker Hub
+      - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build dan Push Image Fastify
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Push Docker image to GHCR
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/fastify-app:beta-latest
+          tags: ${{ env.GHCR_IMAGE }}
 
 
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: beta
+    timeout-minutes: 15
+    steps:
       - name: Deploy with Docker
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -38,7 +49,11 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_SECRET }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/fastify-app:beta-latest
-            cd fastify-app
+            cd btk-fastify-gen
+
+            docker compose pull
             docker compose down
+
             docker compose up -d
+
+            docker image prune -f
